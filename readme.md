@@ -204,7 +204,7 @@ A multi-threaded architecture processes EEG data from an Emotiv headset, extract
 
 
 
-### EmotivStreamer class is designed to read EEG raw data, preprocess EEG raw data, extract meaningful features, and classify brain states using an LSTM model to adapt and learn and predicts an input vector to an RL agent for real-time drone control. 
+
 
 Let's analyze the code in depth.
 
@@ -218,13 +218,22 @@ Here's a breakdown of the purpose of each file in the project:
 * **`drone_control.py`**: Contains the `TelloController` class, which interfaces with the Tello drone via the `djitellopy` library. It provides methods for connecting to the drone, sending control commands (takeoff, land, movement), and setting speeds.
 * **`visualizer_realtime3D.py`**: Implements the `RealtimeEEGVisualizer` class, responsible for displaying EEG data and gyro data in real-time using Matplotlib.
 * **`stream_data.py`**: Includes the `EmotivStreamer` class, which handles the connection to the Emotiv EPOC X headset, decrypts the EEG data, and preprocesses it for use by the RL agent.
+EmotivStreamer class is designed to read EEG raw data, preprocess EEG raw data, extract meaningful features, and classify brain states using an LSTM model to adapt and learn and predicts an input vector to an RL agent for real-time drone control. 
 * **`kalman_filter.py`**: Contains a basic Kalman filter implementation (currently unused in the main loop) for potential noise reduction in sensor data.
+* **`feature_extraction.py`**:
+* **`lstm_handler.py`**:
+* **`lstm_model.py`**:
+* **`signal_handler.py`**:
+* **`data_saver.py`**:
+* **`filtering.py`**:
+* **`LMSFilter.py`**:
+* **`model_utils.py`**:
 
 
 ## Execution Flow
 
 **Run `main.py` with tello drone connected:**
-    * The `main.py` script starts by setting up logging and defining a signal handler to ensure graceful shutdown on `Ctrl+C`.
+    * The `main.py` script starts by setting up logging and defining a signal handler to ensure graceful shutdown on hitting keyboardinterrupt `Ctrl+C`.
     * It initializes instances of `EmotivStreamer`, `RealtimeEEGVisualizer`, and `KalmanFilter`.
     * It attempts to connect to the Emotiv headset using `EmotivStreamer.connect()`.
     * If the headset connection is successful, it attempts to connect to the Tello drone using `DroneControlEnv.connect_drone()`.
@@ -299,7 +308,7 @@ def preprocessing_thread():
      - When the secondary buffer is full, the data is passed to the preprocessing pipeline.
 
 3. **Preprocessing and Feature Extraction**:
-   - **Method**: `process_and_extract_features` in stream_data.py
+   - **Method**: `process_and_extract_features` in stream_data.py. You can get more details in preprocessing thread.
    - **Description**:
      - Preprocesses the data in the secondary buffer and extracts features.
      - Updates the feature window with the extracted feature vector.
@@ -410,8 +419,7 @@ def preprocessing_thread():
   - **Input**: Feature sequence of shape (10, 43008).
   - **Steps**:
     1. The feature sequence is passed through the LSTM model.
-    2. The output is normalized using softmax for classification and scaled for continuous values.
-  - **Output**: A vector of shape (5,), where the first value represents the discrete action, and the remaining values represent continuous parameters.
+  - **Output**: A vector of shape (5,), where the first value represents the discrete action, and the remaining values represent continuous actions parameters.
 
 ### RL Agent Prediction
 - **File**: `learning_rlagent.py`
@@ -437,10 +445,14 @@ def preprocessing_thread():
 
 
 
-
-
-
 ### Critical Processing Modules
+
+
+# EEG Feature Extraction Pipeline
+
+## 📌 Overview
+
+This feature extraction pipeline transforms raw EEG signals into meaningful biomarkers for brain-controlled drone operation. The process cleans artifacts, removes noise, and extracts features/channel to enable precise mental state detection.
 
 These steps are all about cleaning the raw EEG signals before extracting meaningful features. EEG is notoriously noisy, so this stage is critical for ensuring good data quality for ML/RL models.
 
@@ -453,45 +465,7 @@ Eye blinks, muscle activity, jaw clenches
 Sensor drift and environmental electrical noise
 
 
-**Feature Extraction Pipeline (`feature_extraction.py`):**
-
-```python
-Processing Chain:
-Raw EEG → Bandpass Filter → Notch Filter → ICA → CAR →
-→ Band Power (5 bands) → Hjorth Params → Spectral Entropy →
-→ Higuchi FD → Wavelet Features
-```
-
-
-# EEG Feature Extraction Pipeline
-
-## 📌 Overview
-
-This feature extraction pipeline transforms raw EEG signals into meaningful biomarkers for brain-controlled drone operation. The process cleans artifacts, removes noise, and extracts 42+ features/channel to enable precise mental state detection.
-
----
-
-## 🧠 Pipeline Workflow
-
-```
-    A[Raw EEG Signals] --> B(Bandpass Filter 1-50Hz)
-    BP --> NF[50Hz Notch Filter]
-    NF --> ICA[ICA Artifact Removal]
-    ICA --> CAR[Common Average Reference]
-    CAR --> ANC[Adaptive Noise Cancellation]
-    ANC --> DWT[Wavelet Denoising]
-    DWT --> F[Feature Extraction]
-```
-
----
-
-## 🔍 Detailed Processing Stages
-
-
-<img width="372" alt="Screenshot 2025-04-04 at 9 28 11 PM" src="https://github.com/user-attachments/assets/9546996a-c715-4c3a-a4e2-6f18c5f4b1c6" />
-
-
-### 1. Signal Preprocessing
+### Signal Preprocessing
 
 **Objective:** Remove non-neural artifacts and environmental noise
 
@@ -507,56 +481,162 @@ This feature extraction pipeline transforms raw EEG signals into meaningful biom
 
 ---
 
-### 2. Feature Extraction
 
-**Objective:** Quantify neural patterns in 5 domains
+
+**Feature Extraction Pipeline (`feature_extraction.py`):**
+
+```python
+Processing Chain:
+Raw EEG → Bandpass Filter → Notch Filter → ICA → CAR → ANC → DWT
+```
+
+---
+
+## 🧠 Pipeline Workflow
+
+```
+    A[Raw EEG Signals] --> B(Bandpass Filter 1-50Hz)
+    BP --> NF[50Hz Notch Filter]
+    NF --> ICA[ICA Artifact Removal]
+    ICA --> CAR[Common Average Reference]
+    CAR --> ANC[Adaptive Noise Cancellation]
+    ANC --> HW[Hanning Window]
+    ANC --> DWT[Wavelet Denoising]
+    DWT --> F[Feature Extraction]
+```
+
+---
+
+## 🔍 Detailed Processing Stages
+
+
+<img width="372" alt="Screenshot 2025-04-04 at 9 28 11 PM" src="https://github.com/user-attachments/assets/9546996a-c715-4c3a-a4e2-6f18c5f4b1c6" />
+
+
+
+The cleaning process is implemented in the stream_data.py file, specifically in the `preprocess_eeg_data` method. It uses several functions from feature_extraction.py to clean the raw EEG data.
+
+#### **Steps in Preprocessing**
+
+1. **Noise Removal**:
+   - **Notch Filter** (`apply_notch_filter` in feature_extraction.py):
+     - Removes powerline noise (50/60 Hz) using a notch filter.
+     - This is applied to all EEG channels.
+   - **Bandpass Filter** (`apply_bandpass_filter` in feature_extraction.py):
+     - Retains only the relevant frequency bands (1-50 Hz) using a bandpass filter.
+     - This helps remove low-frequency drift and high-frequency noise.
+
+2. **Re-referencing**:
+   - **Common Average Reference (CAR)** (`common_average_reference` in feature_extraction.py):
+     - Reduces background noise by subtracting the average signal across all channels from each channel.
+     - This ensures that the data is referenced to a common baseline.
+
+3. **Artifact Removal**:
+   - **Independent Component Analysis (ICA)** (`apply_ica` in feature_extraction.py):
+     - Removes artifacts such as eye blinks and muscle movements by decomposing the signal into independent components and reconstructing it without the artifact components.
+
+4. **Smoothing**:
+   - **Hanning Window** (`apply_hanning_window` in feature_extraction.py):
+     - Applies a Hanning window to smooth the signal and reduce edge effects during feature extraction.
+     - Smooth signal for better feature extraction
+
+5. **Denoising**:
+   - **Discrete Wavelet Transform (DWT)** (`apply_dwt_denoising` in feature_extraction.py):
+     - Removes high-frequency noise by zeroing out the high-frequency coefficients in the wavelet decomposition.
+
+---
+
+### **2. Feature Extraction**
+
+The feature extraction process is implemented in the `extract_features` method in stream_data.py. It uses several functions from feature_extraction.py to compute various features from the preprocessed EEG data.
+
 
 ## 🔍 Detailed Feature extraction stages 
 
 ![feature_extraction](https://github.com/user-attachments/assets/3c8f215b-ce02-4e51-9279-d04050de2884)
 
 
-#### 🕰 Temporal Features
 
-```python
-def compute_hjorth_parameters(signal):
-    first_deriv = np.diff(signal)
-    second_deriv = np.diff(first_deriv)
-    return [
-        np.sqrt(np.var(first_deriv)/np.var(signal)),  # Mobility
-        np.sqrt(np.var(second_deriv)/np.var(first_deriv))  # Complexity
-    ]
-```
+#### **Steps in Feature Extraction**
+
+1. **Band Power**:
+   - **Function**: `compute_band_power` in feature_extraction.py
+   - **Description**:
+     - Computes the power in different frequency bands (delta, theta, alpha, beta, gamma) using the Fast Fourier Transform (FFT).
+     - The power is normalized and converted to decibels (dB).
+
+2. **Hjorth Parameters**:
+   - **Function**: `compute_hjorth_parameters` in feature_extraction.py
+   - **Description**:
+     - Computes Hjorth mobility and complexity, which measure the signal's dynamics and complexity.
+
+3. **Spectral Entropy**:
+   - **Function**: `compute_spectral_entropy` in feature_extraction.py
+   - **Description**:
+     - Computes the entropy of the power spectral density (PSD) to measure the randomness of the signal.
+
+4. **Fractal Dimension**:
+   - **Function**: `higuchi_fractal_dimension` in feature_extraction.py
+   - **Description**:
+     - Computes the fractal dimension of the signal using Higuchi's method, which quantifies the complexity of the signal.
+
+5. **Temporal Derivatives**:
+   - **Description**:
+     - Computes the first and second-order derivatives of the signal to capture temporal changes.
+
+6. **Static Features**:
+   - **Description**:
+     - Band power, Hjorth parameters, entropy, and fractal dimension are repeated along the time axis to match the temporal resolution of the EEG data.
+
+7. **Concatenation**:
+   - All features are concatenated to form a single feature vector for each second of data.
+
+# To know more abot the preprocessing and feature extraction methods used, you can scroll down to the section.
 
 
-#### 🌌 Spectral Features
 
-```python
-def compute_band_power(eeg_data):
-    fourier_transform = fft(eeg_fft) / buffer_size
-    return {
-        'delta': 1-4Hz,
-        'theta': 4-8Hz,
-        'alpha': 8-12Hz,
-        'beta': 12-30Hz,
-        'gamma': 30-45Hz
-    }
-```
+### ** Integration with Real-Time Streaming**
+
+The preprocessing and feature extraction processes are integrated into the real-time streaming pipeline in stream_data.py.
+
+#### **Steps in Real-Time Integration**
+
+1. **Data Acquisition**:
+   - **Method**: `read_emotiv_data` in stream_data.py
+   - **Description**:
+     - Reads raw EEG data packets from the Emotiv device and parses them into a dictionary format.
+
+2. **Buffer Management**:
+   - **Method**: `update_eeg_buffers` in stream_data.py
+   - **Description**:
+     - Updates the primary and secondary buffers with the new data.
+     - When the secondary buffer is full, the data is passed to the preprocessing pipeline.
+
+3. **Preprocessing and Feature Extraction**:
+   - **Method**: `process_and_extract_features` in stream_data.py
+   - **Description**:
+     - Preprocesses the data in the secondary buffer and extracts features.
+     - Updates the feature window with the extracted feature vector.
+
+4. **Feature Sequence for Prediction**:
+   - **Method**: `get_feature_sequence` in stream_data.py
+   - **Description**:
+     - Retrieves the 10-second feature sequence from the feature window for prediction.
+
+This pipeline ensures that the EEG data is cleaned, processed, and converted into meaningful features in real-time, enabling accurate predictions and control of the Tello drone.
 
 
-#### 🌀 Nonlinear Features
 
-```python
-def higuchi_fractal_dimension(signal):
-    L = []
-    for k in 1..10:
-        L.append(np.mean([sum(abs(diff(signal[m::k]))) for m in 0..k]))
-    return -np.polyfit(log(k), log(L), 1)[^0]
-```
 
----
+
+
+
+
+
 
 ## 🚨 Why This Pipeline Matters
+
+
 
 
 ## Neural Signal Processing Fundamentals
@@ -632,7 +712,18 @@ $$
 ### 2. Feature Extraction 
 Once the signal is clean, we need to extract the "features" that tell us something about what the brain is doing. These are like key characteristics or patterns in the brainwave data.
 
-#### 2.1 Temporal Features
+#### 🕰 Temporal Features
+
+```python
+def compute_hjorth_parameters(signal):
+    first_deriv = np.diff(signal)
+    second_deriv = np.diff(first_deriv)
+    return [
+        np.sqrt(np.var(first_deriv)/np.var(signal)),  # Mobility
+        np.sqrt(np.var(second_deriv)/np.var(first_deriv))  # Complexity
+    ]
+```
+
 
 **Hjorth Parameters:**
 
@@ -658,7 +749,27 @@ Comp = \frac{Mob(\frac{d^2V}{dt^2})}{Mob(\frac{dV}{dt})}
 $$
 
 
-#### 2.2 Spectral Features
+
+
+
+
+
+
+
+
+#### 🌌 Spectral Features
+
+```python
+def compute_band_power(eeg_data):
+    fourier_transform = fft(eeg_fft) / buffer_size
+    return {
+        'delta': 1-4Hz,
+        'theta': 4-8Hz,
+        'alpha': 8-12Hz,
+        'beta': 12-30Hz,
+        'gamma': 30-45Hz
+    }
+```
 
 This measures the "randomness" or "uncertainty" of the frequency content in the EEG signal.
 
@@ -685,7 +796,18 @@ $$
 H_{spec} = -\sum_{f} P(f)\log P(f)
 $$
 
-#### 2.3 Nonlinear Features
+
+#### 🌀 Nonlinear Features
+
+```python
+def higuchi_fractal_dimension(signal):
+    L = []
+    for k in 1..10:
+        L.append(np.mean([sum(abs(diff(signal[m::k]))) for m in 0..k]))
+    return -np.polyfit(log(k), log(L), 1)[^0]
+```
+
+---
 
 **Higuchi Fractal Dimension:**
 
@@ -828,76 +950,7 @@ The feature extraction and cleaning process in the provided code involves severa
 
 ---
 
-### **1. Data Cleaning and Preprocessing**
 
-The cleaning process is implemented in the stream_data.py file, specifically in the `preprocess_eeg_data` method. It uses several functions from feature_extraction.py to clean the raw EEG data.
-
-#### **Steps in Preprocessing**
-
-1. **Noise Removal**:
-   - **Notch Filter** (`apply_notch_filter` in feature_extraction.py):
-     - Removes powerline noise (50/60 Hz) using a notch filter.
-     - This is applied to all EEG channels.
-   - **Bandpass Filter** (`apply_bandpass_filter` in feature_extraction.py):
-     - Retains only the relevant frequency bands (1-50 Hz) using a bandpass filter.
-     - This helps remove low-frequency drift and high-frequency noise.
-
-2. **Re-referencing**:
-   - **Common Average Reference (CAR)** (`common_average_reference` in feature_extraction.py):
-     - Reduces background noise by subtracting the average signal across all channels from each channel.
-     - This ensures that the data is referenced to a common baseline.
-
-3. **Artifact Removal**:
-   - **Independent Component Analysis (ICA)** (`apply_ica` in feature_extraction.py):
-     - Removes artifacts such as eye blinks and muscle movements by decomposing the signal into independent components and reconstructing it without the artifact components.
-
-4. **Smoothing**:
-   - **Hanning Window** (`apply_hanning_window` in feature_extraction.py):
-     - Applies a Hanning window to smooth the signal and reduce edge effects during feature extraction.
-
-5. **Denoising**:
-   - **Discrete Wavelet Transform (DWT)** (`apply_dwt_denoising` in feature_extraction.py):
-     - Removes high-frequency noise by zeroing out the high-frequency coefficients in the wavelet decomposition.
-
----
-
-### **2. Feature Extraction**
-
-The feature extraction process is implemented in the `extract_features` method in stream_data.py. It uses several functions from feature_extraction.py to compute various features from the preprocessed EEG data.
-
-#### **Steps in Feature Extraction**
-
-1. **Band Power**:
-   - **Function**: `compute_band_power` in feature_extraction.py
-   - **Description**:
-     - Computes the power in different frequency bands (delta, theta, alpha, beta, gamma) using the Fast Fourier Transform (FFT).
-     - The power is normalized and converted to decibels (dB).
-
-2. **Hjorth Parameters**:
-   - **Function**: `compute_hjorth_parameters` in feature_extraction.py
-   - **Description**:
-     - Computes Hjorth mobility and complexity, which measure the signal's dynamics and complexity.
-
-3. **Spectral Entropy**:
-   - **Function**: `compute_spectral_entropy` in feature_extraction.py
-   - **Description**:
-     - Computes the entropy of the power spectral density (PSD) to measure the randomness of the signal.
-
-4. **Fractal Dimension**:
-   - **Function**: `higuchi_fractal_dimension` in feature_extraction.py
-   - **Description**:
-     - Computes the fractal dimension of the signal using Higuchi's method, which quantifies the complexity of the signal.
-
-5. **Temporal Derivatives**:
-   - **Description**:
-     - Computes the first and second-order derivatives of the signal to capture temporal changes.
-
-6. **Static Features**:
-   - **Description**:
-     - Band power, Hjorth parameters, entropy, and fractal dimension are repeated along the time axis to match the temporal resolution of the EEG data.
-
-7. **Concatenation**:
-   - All features are concatenated to form a single feature vector for each second of data.
 
 ---
 
@@ -925,35 +978,6 @@ The feature vectors extracted for each second of data are stored in a rolling fe
 
 ---
 
-### **4. Integration with Real-Time Streaming**
-
-The preprocessing and feature extraction processes are integrated into the real-time streaming pipeline in stream_data.py.
-
-#### **Steps in Real-Time Integration**
-
-1. **Data Acquisition**:
-   - **Method**: `read_emotiv_data` in stream_data.py
-   - **Description**:
-     - Reads raw EEG data packets from the Emotiv device and parses them into a dictionary format.
-
-2. **Buffer Management**:
-   - **Method**: `update_eeg_buffers` in stream_data.py
-   - **Description**:
-     - Updates the primary and secondary buffers with the new data.
-     - When the secondary buffer is full, the data is passed to the preprocessing pipeline.
-
-3. **Preprocessing and Feature Extraction**:
-   - **Method**: `process_and_extract_features` in stream_data.py
-   - **Description**:
-     - Preprocesses the data in the secondary buffer and extracts features.
-     - Updates the feature window with the extracted feature vector.
-
-4. **Feature Sequence for Prediction**:
-   - **Method**: `get_feature_sequence` in stream_data.py
-   - **Description**:
-     - Retrieves the 10-second feature sequence from the feature window for prediction.
-
-This pipeline ensures that the EEG data is cleaned, processed, and converted into meaningful features in real-time, enabling accurate predictions and control of the Tello drone.
 
 
 
@@ -980,8 +1004,8 @@ Secondary Buffer: 2560 samples (10s history)
 3. **Model Inference:**
 
 ```python
-LSTM Input Shape: (10, 42)  # 10s window × 42 features
-RL Agent Output: 6 actions  # (yaw, pitch, roll, altitude, x, y)
+LSTM Input Shape: (10, 4036)  # 10s window × 42 features
+RL Agent Output: 5 actions  # (yaw, pitch, roll, altitude, x, y)
 ```
 
 
