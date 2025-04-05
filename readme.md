@@ -108,7 +108,6 @@ To get started, clone the repository:
 ```bash
 
 git clone https://github.com/kushalpagolu/Emotiv_Epoc_X_Tello_Control
-
 ```
 
 2. **Connect Hardware:**
@@ -205,9 +204,7 @@ A multi-threaded architecture processes EEG data from an Emotiv headset, extract
 
 
 
-
-
-Let's analyze the code in depth.
+### Let's analyze the code in depth.
 
 
 ## File Structure and Descriptions
@@ -603,7 +600,8 @@ The feature extraction process is implemented in the `extract_features` method i
 7. **Concatenation**:
    - All features are concatenated to form a single feature vector for each second of data.
 
-# To know more abot the preprocessing and feature extraction methods used, you can scroll down to the section.
+
+# To know more abot the preprocessing and feature extraction methods used, you can scroll down to the _'Why This Pipeline Matters'_ section.
 
 
 
@@ -635,15 +633,17 @@ This pipeline ensures that the EEG data is cleaned, processed, and converted int
 
 
 
-
-
 ---
 
 ## 📚 Reference Architecture
 
-EEG Feature Extraction Pipeline
-
 *This pipeline enables 18-22ms feature extraction latency per 256-sample window, critical for real-time drone control.*
+
+This pipeline ensures that the system operates in real-time, with minimal latency between data acquisition and action execution.
+
+The feature extraction and cleaning process in the provided code involves several steps, which are implemented across the feature_extraction.py and stream_data.py files. Here's a detailed explanation of how the code works to clean and extract features from EEG data:
+
+---
 
 
 
@@ -675,45 +675,9 @@ EEG Feature Extraction Pipeline
 
 
 
-This pipeline ensures that the system operates in real-time, with minimal latency between data acquisition and action execution.
-
-The feature extraction and cleaning process in the provided code involves several steps, which are implemented across the feature_extraction.py and stream_data.py files. Here's a detailed explanation of how the code works to clean and extract features from EEG data:
-
----
-
-
-
----
-
-### **3. Real-Time Feature Window Management**
-
-The feature vectors extracted for each second of data are stored in a rolling feature window, which is implemented in the stream_data.py file.
-
-#### **Steps in Feature Window Management**
-
-1. **Feature Window**:
-   - **Attribute**: `feature_window` in `EmotivStreamer`
-   - **Description**:
-     - A `deque` object with a maximum length of 10 is used to store the last 10 feature vectors (corresponding to 10 seconds of data).
-
-2. **Updating the Feature Window**:
-   - **Method**: `update_feature_window` in stream_data.py
-   - **Description**:
-     - Adds a new feature vector to the feature window.
-     - If the window is full, the oldest feature vector is automatically removed.
-
-3. **Feature Sequence Extraction**:
-   - **Method**: `extract_features_sequence` in stream_data.py
-   - **Description**:
-     - Combines the feature vectors in the feature window into a single feature sequence of shape `(10, feature_vector_length)`.
-
----
-
-
-
-
-
 # System Control
+
+```
 stop_main_loop = threading.Event() # Global shutdown signal
 lock = threading.Lock()            # Resource access control
 ```
@@ -836,11 +800,6 @@ $$
 $$
 Comp = \frac{Mob(\frac{d^2V}{dt^2})}{Mob(\frac{dV}{dt})}
 $$
-
-
-
-
-
 
 
 
