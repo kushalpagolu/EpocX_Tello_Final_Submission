@@ -441,7 +441,7 @@ Feature Window: 10s sequences → LSTM input
     2. The mapped commands are sent to the drone using `send_rc_control`.
   - **Real-Time Aspect**: The RL agent's predictions are directly translated into drone actions, enabling real-time control.
 
-**RL Agent and Drone Control (In `learning_rlagent.py`):**
+### RL Agent and Drone Control (In `learning_rlagent.py`)
     - The `DroneControlEnv` class defines the environment in which the RL agent learns to control the drone.
     - The `connect_drone` method attempts to connect to the Tello drone and sends a takeoff command.
     - The `step` method receives an action from the RL agent, translates it into drone control commands (forward/backward speed, left/right speed), and sends these commands to the drone using `TelloController.send_rc_control()`.
