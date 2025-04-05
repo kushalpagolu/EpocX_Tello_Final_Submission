@@ -79,7 +79,7 @@ This predictable key generation and ECB mode usage create cryptographic vulnerab
 ### Prerequisites
 
 1. **Hardware:**
-    * Emotiv EPOC X headset
+    * Emotiv EPOC X headset only* 
     * Tello drone
     * Computer with sufficient processing power
 2. **Software:**
@@ -90,6 +90,13 @@ This predictable key generation and ECB mode usage create cryptographic vulnerab
 pip install pandas matplotlib hid djitellopy pycryptodome scikit-learn stable-baselines3 gym numpy, scipy, pywt, pynput                       
 ```
 
+For macos some packages might work with homebrew
+
+```bash
+brew install pandas matplotlib hid djitellopy pycryptodome scikit-learn stable-baselines3 gym numpy, scipy, pywt, pynput                       
+```
+
+It is better to install a virtual environment and install all the packages needed for this code to run.
 
 ### Installation and Setup
 
@@ -157,7 +164,7 @@ python main.py
 ```
 
 
-3. **Run `main.py` with drone connected:**
+3. **Run `main.py` with tello drone connected:**
 
 ```bash
 python main.py --connect-drone
@@ -177,7 +184,7 @@ python main.py --connect-drone
     * You can interrupt the script by pressing `Ctrl+C`. This will trigger the shutdown sequence, landing the drone and disconnecting from the devices.
 
 
-### EmotivStreamer class is designed to read EEG raw data, preprocess EEG raw data, extract meaningful features, and classify brain states using a LSTM model to adapt and learn and predicts an input vector to an RL agent for real-time drone control. Let's analyze the code in depth.
+### EmotivStreamer class is designed to read EEG raw data, preprocess EEG raw data, extract meaningful features, and classify brain states using an LSTM model to adapt and learn and predicts an input vector to an RL agent for real-time drone control. Let's analyze the code in depth.
 
 
 ## File Structure and Descriptions
@@ -200,7 +207,57 @@ Here's a breakdown of the purpose of each file in the project:
     * It attempts to connect to the Emotiv headset using `EmotivStreamer.connect()`.
     * If the headset connection is successful, it attempts to connect to the Tello drone using `DroneControlEnv.connect_drone()`.
     * It starts a background thread (`save_thread`) to continuously save the collected EEG data to an Excel file using the `save_data_continuously` function.
-    * It then calls the `start_data_collection` function, which contains the main data processing loop.
+    * It then calls the `preprocessing_thread` function, which contains the main data processing loop.
+
+
+# Thread Management
+
+```python
+stream_thread = threading.Thread(target=streaming_thread, ...)
+preprocess_thread = threading.Thread(target=preprocessing_thread, ...)
+```
+# Queue Initialization
+
+```
+data_queue = queue.Queue()          # Raw EEG data pipeline
+visualization_queue = queue.Queue() # Processed data for visualization
+```
+
+# System Initialization
+```
+emotiv = EmotivStreamer()           # Hardware interface
+visualizer = RealtimeEEGVisualizer()# 3D brain visualization
+env = DroneControlEnv(...)          # Drone control interface
+```
+
+
+### 2. Thread Responsibilities
+
+**Streaming Thread:**
+
+```python
+def streaming_thread():
+    while active:
+        packet = emotiv.read_emotiv_data()  # Raw data acquisition
+        data_queue.put(packet)              # Feed processing pipeline
+        visualization_queue.put(packet)     # Update live visualization
+        handle_gyro_data(packet)            # Track head movements
+```
+
+**Processing Thread:**
+
+```python
+def preprocessing_thread():
+    while active:
+        packet = data_queue.get()           # Retrieve raw data
+        buffers = update_eeg_buffers()      # Maintain 10s window (256 samples @ 256Hz)
+        feature_sequence = extract_features() # Compute features/channel
+        lstm_output = predict_sequence()    # LSTM temporal analysis
+        action = rl_agent.predict()         # Reinforcement learning decision
+        env.step(action)                    # Execute drone command
+```
+
+
 **Data Collection and Processing:**
     * The preprocessing and feature extraction processes are integrated into the real-time streaming pipeline in stream_data.py.
 
@@ -373,52 +430,6 @@ A multi-threaded architecture processes EEG data from an Emotiv headset, extract
 
 
 
-## Key Components
-
-### 1. Main Execution Flow (`main.py`)
-
-```python
-# Thread Management
-stream_thread = threading.Thread(target=streaming_thread, ...)
-preprocess_thread = threading.Thread(target=preprocessing_thread, ...)
-
-# Queue Initialization
-data_queue = queue.Queue()          # Raw EEG data pipeline
-visualization_queue = queue.Queue() # Processed data for visualization
-
-# System Initialization
-emotiv = EmotivStreamer()           # Hardware interface
-visualizer = RealtimeEEGVisualizer()# 3D brain visualization
-env = DroneControlEnv(...)          # Drone control interface
-```
-
-
-### 2. Thread Responsibilities
-
-**Streaming Thread:**
-
-```python
-def streaming_thread():
-    while active:
-        packet = emotiv.read_emotiv_data()  # Raw data acquisition
-        data_queue.put(packet)              # Feed processing pipeline
-        visualization_queue.put(packet)     # Update live visualization
-        handle_gyro_data(packet)            # Track head movements
-```
-
-**Processing Thread:**
-
-```python
-def preprocessing_thread():
-    while active:
-        packet = data_queue.get()           # Retrieve raw data
-        buffers = update_eeg_buffers()      # Maintain 10s window (256 samples @ 256Hz)
-        feature_sequence = extract_features() # Compute 42+ features/channel
-        lstm_output = predict_sequence()    # LSTM temporal analysis
-        action = rl_agent.predict()         # Reinforcement learning decision
-        env.step(action)                    # Execute drone command
-```
-
 
 ### 3. Critical Processing Modules
 
@@ -455,7 +466,7 @@ This feature extraction pipeline transforms raw EEG signals into meaningful biom
 
 ```
     A[Raw EEG Signals] --> B(Bandpass Filter 1-50Hz)
-    BP --> NF[50Hz Notch]
+    BP --> NF[50Hz Notch Filter]
     NF --> ICA[ICA Artifact Removal]
     ICA --> CAR[Common Average Reference]
     CAR --> ANC[Adaptive Noise Cancellation]
@@ -468,7 +479,7 @@ This feature extraction pipeline transforms raw EEG signals into meaningful biom
 ## 🔍 Detailed Processing Stages
 
 
-<img width="474" alt="Screenshot 2025-04-04 at 8 17 06 PM" src="https://github.com/user-attachments/assets/b1951be2-5679-42e8-a7be-348b5f4f5ef4" />
+<img width="372" alt="Screenshot 2025-04-04 at 9 28 11 PM" src="https://github.com/user-attachments/assets/9546996a-c715-4c3a-a4e2-6f18c5f4b1c6" />
 
 
 ### 1. Signal Preprocessing
@@ -490,6 +501,11 @@ This feature extraction pipeline transforms raw EEG signals into meaningful biom
 ### 2. Feature Extraction
 
 **Objective:** Quantify neural patterns in 5 domains
+
+## 🔍 Detailed Feature extraction stages 
+
+![feature_extraction](https://github.com/user-attachments/assets/3c8f215b-ce02-4e51-9279-d04050de2884)
+
 
 #### 🕰 Temporal Features
 
