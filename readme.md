@@ -232,7 +232,7 @@ EmotivStreamer class is designed to read EEG raw data, preprocess EEG raw data, 
 
 ## Execution Flow
 
-**Run `main.py` with tello drone connected:**
+    **Run `main.py` with tello drone connected:**
 
     * The `main.py` script starts by setting up logging and defining a signal handler to ensure graceful shutdown on hitting keyboardinterrupt `Ctrl+C`.
     * It initializes instances of `EmotivStreamer`, `RealtimeEEGVisualizer`, and `KalmanFilter`.
@@ -302,11 +302,7 @@ def preprocessing_thread():
    - **Description**:
      - Reads raw EEG data packets from the Emotiv device and parses them into a dictionary format.
 
-2. **Buffer Management**:
-   - **Method**: `update_eeg_buffers` in stream_data.py
-   - **Description**:
-     - Updates the primary and secondary buffers with the new data.
-     - When the secondary buffer is full, the data is passed to the preprocessing pipeline.
+    
 
 3. **Preprocessing and Feature Extraction**:
    - **Method**: `process_and_extract_features` in stream_data.py. You can get more details in preprocessing thread.
@@ -323,7 +319,9 @@ def preprocessing_thread():
 # Preprocessing Thread 
 
 ## 1. Buffer Management and Updates
-To train the LSTM with enough data, I implemented a rolling buffers to constantly keep an instance of latest 10seconds of 14 * 256 frames of eeg raw data with preprocessing and extracted features for the 10 seconds of raw data. To understand how the cleaning and extraction happens, we need to be familiar with how and why.
+To train the LSTM with enough data, I implemented rolling buffers to constantly keep an instance of latest 10seconds of 14 * 256 frames of eeg raw data with preprocessing and extracted features for the 10 seconds of raw data. To understand how the cleaning and extraction happens, we need to be familiar with how and why.
+
+
 
 ### Buffer Initialization
 - **File**: `stream_data.py`
@@ -332,6 +330,9 @@ To train the LSTM with enough data, I implemented a rolling buffers to constantl
   - Each channel (e.g., "AF3", "F7", etc.) has its own buffer 14 * 256.
   - **Purpose**: To store incoming EEG data for each channel in a rolling manner, ensuring old data is replaced by new data when the buffer is full.
 
+**Buffer Management**:
+     - Updates the primary and secondary buffers with the new data.
+     - When the secondary buffer is full, the data is passed to the preprocessing pipeline.
 ### Updating Buffers
 - **File**: `stream_data.py`
 - **Method**: `update_eeg_buffers`
@@ -342,6 +343,15 @@ To train the LSTM with enough data, I implemented a rolling buffers to constantl
     3. The secondary buffer is validated to ensure it contains the required number of samples for all channels.
     4. If valid, the data in the secondary buffer is passed to the `process_and_extract_features` method for preprocessing and feature extraction.
   - **Real-Time Aspect**: The use of rolling buffers ensures that the system always has the latest EEG data for processing, enabling real-time operation.
+
+
+### Buffer Management Specs
+
+```python
+Primary Buffer: 256 samples (1s @ 256Hz)
+Secondary Buffer: 2560 samples (10s history)
+Feature Window: 10s sequences → LSTM input
+```
 
 ## 2. Preprocessing Buffers
 
@@ -363,6 +373,7 @@ To train the LSTM with enough data, I implemented a rolling buffers to constantl
        - Discrete Wavelet Transform (DWT) is optionally applied to remove high-frequency noise.
   - **Output**: Preprocessed EEG data ready for feature extraction.
   - **Real-Time Aspect**: The preprocessing pipeline is optimized to handle data in chunks (256 samples), ensuring minimal latency.
+
 
 ## 3. Feature Extraction
 
@@ -608,11 +619,7 @@ The preprocessing and feature extraction processes are integrated into the real-
    - **Description**:
      - Reads raw EEG data packets from the Emotiv device and parses them into a dictionary format.
 
-2. **Buffer Management**:
-   - **Method**: `update_eeg_buffers` in stream_data.py
-   - **Description**:
-     - Updates the primary and secondary buffers with the new data.
-     - When the secondary buffer is full, the data is passed to the preprocessing pipeline.
+
 
 3. **Preprocessing and Feature Extraction**:
    - **Method**: `process_and_extract_features` in stream_data.py
@@ -630,6 +637,87 @@ This pipeline ensures that the EEG data is cleaned, processed, and converted int
 
 
 
+
+---
+
+## 📚 Reference Architecture
+
+EEG Feature Extraction Pipeline
+
+*This pipeline enables 18-22ms feature extraction latency per 256-sample window, critical for real-time drone control.*
+
+
+
+
+## Thread Synchronization Mechanism
+
+```python
+# Data Pipeline
+┌───────────────────────┐       ┌───────────────────────┐
+│ Streaming Thread      │       │ Processing Thread     │
+│ (Producer)            │       │ (Consumer)            │
+├───────────────────────┤       ├───────────────────────┤
+│ data_queue.put(packet)│───────▶ data_queue.get()      │
+└───────────────────────┘       └───────────────────────┘
+
+# Visualization Pipeline
+┌───────────────────────┐       ┌───────────────────────┐
+│ Streaming Thread      │       │ Main Thread           │
+│ (Producer)            │       │ (Consumer)            │
+├───────────────────────┤       ├───────────────────────┤
+│ viz_queue.put(packet) │───────▶ viz_queue.get()       │
+└───────────────────────┘       └───────────────────────┘
+
+
+
+```
+
+
+
+
+
+This pipeline ensures that the system operates in real-time, with minimal latency between data acquisition and action execution.
+
+The feature extraction and cleaning process in the provided code involves several steps, which are implemented across the feature_extraction.py and stream_data.py files. Here's a detailed explanation of how the code works to clean and extract features from EEG data:
+
+---
+
+
+
+---
+
+### **3. Real-Time Feature Window Management**
+
+The feature vectors extracted for each second of data are stored in a rolling feature window, which is implemented in the stream_data.py file.
+
+#### **Steps in Feature Window Management**
+
+1. **Feature Window**:
+   - **Attribute**: `feature_window` in `EmotivStreamer`
+   - **Description**:
+     - A `deque` object with a maximum length of 10 is used to store the last 10 feature vectors (corresponding to 10 seconds of data).
+
+2. **Updating the Feature Window**:
+   - **Method**: `update_feature_window` in stream_data.py
+   - **Description**:
+     - Adds a new feature vector to the feature window.
+     - If the window is full, the oldest feature vector is automatically removed.
+
+3. **Feature Sequence Extraction**:
+   - **Method**: `extract_features_sequence` in stream_data.py
+   - **Description**:
+     - Combines the feature vectors in the feature window into a single feature sequence of shape `(10, feature_vector_length)`.
+
+---
+
+
+
+
+
+# System Control
+stop_main_loop = threading.Event() # Global shutdown signal
+lock = threading.Lock()            # Resource access control
+```
 
 
 
@@ -881,13 +969,7 @@ Processing Chain Per Channel:
 ```
 
 
-### Buffer Management
 
-```python
-Primary Buffer: 256 samples (1s @ 256Hz)
-Secondary Buffer: 2560 samples (10s history)
-Feature Window: 10s sequences → LSTM input
-```
 
 ---
 
@@ -906,87 +988,6 @@ features = {
     "hjorth": compute_hjorth_parameters(processed),
     "entropy": compute_spectral_entropy(processed, 256)
 }
-```
-
----
-
-## 📚 Reference Architecture
-
-EEG Feature Extraction Pipeline
-
-*This pipeline enables 18-22ms feature extraction latency per 256-sample window, critical for real-time drone control.*
-
-
-
-
-## Thread Synchronization Mechanism
-
-```python
-# Data Pipeline
-┌───────────────────────┐       ┌───────────────────────┐
-│ Streaming Thread      │       │ Processing Thread     │
-│ (Producer)            │       │ (Consumer)            │
-├───────────────────────┤       ├───────────────────────┤
-│ data_queue.put(packet)│───────▶ data_queue.get()      │
-└───────────────────────┘       └───────────────────────┘
-
-# Visualization Pipeline
-┌───────────────────────┐       ┌───────────────────────┐
-│ Streaming Thread      │       │ Main Thread           │
-│ (Producer)            │       │ (Consumer)            │
-├───────────────────────┤       ├───────────────────────┤
-│ viz_queue.put(packet) │───────▶ viz_queue.get()       │
-└───────────────────────┘       └───────────────────────┘
-
-
-
-```
-
-
-
-
-
-This pipeline ensures that the system operates in real-time, with minimal latency between data acquisition and action execution.
-
-The feature extraction and cleaning process in the provided code involves several steps, which are implemented across the feature_extraction.py and stream_data.py files. Here's a detailed explanation of how the code works to clean and extract features from EEG data:
-
----
-
-
-
----
-
-### **3. Real-Time Feature Window Management**
-
-The feature vectors extracted for each second of data are stored in a rolling feature window, which is implemented in the stream_data.py file.
-
-#### **Steps in Feature Window Management**
-
-1. **Feature Window**:
-   - **Attribute**: `feature_window` in `EmotivStreamer`
-   - **Description**:
-     - A `deque` object with a maximum length of 10 is used to store the last 10 feature vectors (corresponding to 10 seconds of data).
-
-2. **Updating the Feature Window**:
-   - **Method**: `update_feature_window` in stream_data.py
-   - **Description**:
-     - Adds a new feature vector to the feature window.
-     - If the window is full, the oldest feature vector is automatically removed.
-
-3. **Feature Sequence Extraction**:
-   - **Method**: `extract_features_sequence` in stream_data.py
-   - **Description**:
-     - Combines the feature vectors in the feature window into a single feature sequence of shape `(10, feature_vector_length)`.
-
----
-
-
-
-
-
-# System Control
-stop_main_loop = threading.Event() # Global shutdown signal
-lock = threading.Lock()            # Resource access control
 ```
 
 
