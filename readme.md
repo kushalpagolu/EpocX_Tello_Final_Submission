@@ -187,6 +187,23 @@ python main.py --connect-drone
     * You can interrupt the script by pressing `Ctrl+C`. This will trigger the shutdown sequence, landing the drone and disconnecting from the devices.
 
 
+## System Overview
+
+A multi-threaded architecture processes EEG data from an Emotiv headset, extracts features, makes predictions using machine learning models, and controls a drone in real-time. The system uses three parallel execution flows:
+
+1. **Data Acquisition Thread** (streaming_thread)
+2. **Processing/Prediction Thread** (preprocessing_thread)
+3. **Main Thread** (Visualization and Coordination)
+
+## Program Flow Chart
+
+
+![properflow](https://github.com/user-attachments/assets/2160bb33-77bc-4b18-ab9a-afb3222883a3)
+
+
+
+
+
 ### EmotivStreamer class is designed to read EEG raw data, preprocess EEG raw data, extract meaningful features, and classify brain states using an LSTM model to adapt and learn and predicts an input vector to an RL agent for real-time drone control. 
 
 Let's analyze the code in depth.
@@ -421,24 +438,9 @@ def preprocessing_thread():
 
 
 
-## System Overview
-
-A multi-threaded architecture processes EEG data from an Emotiv headset, extracts features, makes predictions using machine learning models, and controls a drone in real-time. The system uses three parallel execution flows:
-
-1. **Data Acquisition Thread** (streaming_thread)
-2. **Processing/Prediction Thread** (preprocessing_thread)
-3. **Main Thread** (Visualization and Coordination)
-
-## Program Flow Chart
 
 
-![properflow](https://github.com/user-attachments/assets/2160bb33-77bc-4b18-ab9a-afb3222883a3)
-
-
-
-
-
-### 3. Critical Processing Modules
+### Critical Processing Modules
 
 These steps are all about cleaning the raw EEG signals before extracting meaningful features. EEG is notoriously noisy, so this stage is critical for ensuring good data quality for ML/RL models.
 
