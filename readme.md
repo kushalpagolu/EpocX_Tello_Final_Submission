@@ -668,121 +668,142 @@ EEG Feature Extraction Pipeline
 
 
 
-1. Buffer Management and Updates
-Buffer Initialization
-File: stream_data.py
-Method: initialize_buffers
-Buffers are initialized as deque objects with a maximum length equal to the buffer size (256 samples, corresponding to 1 second of EEG data).
-Each channel (e.g., "AF3", "F7", etc.) has its own buffer.
-Purpose: To store incoming EEG data for each channel in a rolling manner, ensuring old data is replaced by new data when the buffer is full.
-Updating Buffers
-File: stream_data.py
-Method: update_eeg_buffers
-Input: Raw EEG data (raw_data), channel names, primary and secondary buffers.
-Steps:
-For each channel, the new data is appended to the primary buffer.
-If the primary buffer for any channel reaches the required size (256 samples), the oldest 256 samples are moved to the secondary buffer for processing.
-The secondary buffer is validated to ensure it contains the required number of samples for all channels.
-If valid, the data in the secondary buffer is passed to the process_and_extract_features method for preprocessing and feature extraction.
-Real-Time Aspect: The use of rolling buffers ensures that the system always has the latest EEG data for processing, enabling real-time operation.
-1. Preprocessing Buffers
-Preprocessing Pipeline
-File: stream_data.py
-Method: preprocess_eeg_data
-Input: Data from the secondary buffer.
-Steps:
-Noise Removal:
-A notch filter is applied to remove powerline noise (50/60 Hz).
-A bandpass filter is applied to retain frequencies in the range of 1-50 Hz.
-Re-referencing:
-Common Average Reference (CAR) is applied to reduce background noise.
-Artifact Removal:
-Independent Component Analysis (ICA) is optionally applied to remove artifacts like eye blinks and muscle movements.
-Smoothing:
-A Hanning window is applied to smooth the signal.
-Denoising:
-Discrete Wavelet Transform (DWT) is optionally applied to remove high-frequency noise.
-Output: Preprocessed EEG data ready for feature extraction.
-Real-Time Aspect: The preprocessing pipeline is optimized to handle data in chunks (256 samples), ensuring minimal latency.
-1. Feature Extraction
-Feature Extraction Pipeline
-File: stream_data.py
-Method: extract_features
-Input: Preprocessed EEG data (14 channels, 256 samples per channel).
-Steps:
-Band Power:
-Power in different frequency bands (delta, theta, alpha, beta, gamma) is computed using FFT.
-Hjorth Parameters:
-Mobility and complexity are computed to capture signal dynamics.
-Spectral Entropy:
-Entropy of the power spectral density is computed to measure signal randomness.
-Fractal Dimension:
-Higuchi's fractal dimension is computed to capture signal complexity.
-Temporal Derivatives:
-First and second-order derivatives are computed to capture temporal changes.
-Static Features:
-Band power, Hjorth parameters, entropy, and fractal dimension are repeated along the time axis to match the temporal resolution of the EEG data.
-Concatenation:
-All features are concatenated to form a single feature vector for each second of data.
-Output: Feature vector of shape (14, total_features).
-Feature Sequence Extraction
-File: stream_data.py
-Method: extract_features_sequence
-Input: A 10-second window of EEG data (10, 14, 256).
-Steps:
-For each second of data, features are extracted using the extract_features method.
-The resulting feature vectors are flattened and combined into a sequence.
-Output: Feature sequence of shape (10, 43008).
-1. Real-Time Feature Window Management
-Feature Window
-File: stream_data.py
-Attribute: feature_window
-A deque object with a maximum length of 10 is used to store the last 10 feature vectors (corresponding to 10 seconds of data).
-Real-Time Aspect: The feature window ensures that the system always has the latest 10 seconds of features for prediction.
-Updating the Feature Window
-File: stream_data.py
-Method: update_feature_window
-Input: A single feature vector.
-Steps:
-The feature vector is appended to the feature_window.
-If the window is full, the oldest feature vector is automatically removed.
-Real-Time Aspect: The rolling nature of the feature window ensures that the system always has the most recent data for prediction.
-1. Prediction and Action Mapping
-LSTM Prediction
-File: lstm_handler.py
-Method: predict_sequence
-Input: Feature sequence of shape (10, 43008).
-Steps:
-The feature sequence is passed through the LSTM model.
-The output is normalized using softmax for classification and scaled for continuous values.
-Output: A vector of shape (5,), where the first value represents the discrete action, and the remaining values represent continuous parameters.
-RL Agent Prediction
-File: learning_rlagent.py
-Method: step
-Input: Action vector from the RL agent.
-Steps:
-The action vector is mapped to drone commands using _map_action_to_command.
-The mapped commands are sent to the drone using send_rc_control.
-Real-Time Aspect: The RL agent's predictions are directly translated into drone actions, enabling real-time control.
-1. Summary of Real-Time Workflow
-Data Acquisition:
+```
 
-EEG data is continuously streamed from the Emotiv device and added to the primary buffer.
-Buffer Management:
 
-Data is moved from the primary buffer to the secondary buffer when full, ensuring a rolling window of the latest data.
-Preprocessing:
 
-Data in the secondary buffer is preprocessed to remove noise and artifacts.
-Feature Extraction:
+# Preprocessing Thread Documentation
 
-Preprocessed data is converted into feature vectors, which are added to the feature window.
-Prediction:
+## 1. Buffer Management and Updates
 
-The feature window is used to generate a feature sequence, which is passed to the LSTM model for prediction.
-Action Execution:
+### Buffer Initialization
+- **File**: `stream_data.py`
+- **Method**: `initialize_buffers`
+  - Buffers are initialized as `deque` objects with a maximum length equal to the buffer size (256 samples, corresponding to 1 second of EEG data).
+  - Each channel (e.g., "AF3", "F7", etc.) has its own buffer.
+  - **Purpose**: To store incoming EEG data for each channel in a rolling manner, ensuring old data is replaced by new data when the buffer is full.
 
-The RL agent maps the LSTM output to drone commands, which are executed in real-time.
+### Updating Buffers
+- **File**: `stream_data.py`
+- **Method**: `update_eeg_buffers`
+  - **Input**: Raw EEG data (`raw_data`), channel names, primary and secondary buffers.
+  - **Steps**:
+    1. For each channel, the new data is appended to the primary buffer.
+    2. If the primary buffer for any channel reaches the required size (256 samples), the oldest 256 samples are moved to the secondary buffer for processing.
+    3. The secondary buffer is validated to ensure it contains the required number of samples for all channels.
+    4. If valid, the data in the secondary buffer is passed to the `process_and_extract_features` method for preprocessing and feature extraction.
+  - **Real-Time Aspect**: The use of rolling buffers ensures that the system always has the latest EEG data for processing, enabling real-time operation.
+
+## 2. Preprocessing Buffers
+
+### Preprocessing Pipeline
+- **File**: `stream_data.py`
+- **Method**: `preprocess_eeg_data`
+  - **Input**: Data from the secondary buffer.
+  - **Steps**:
+    1. **Noise Removal**:
+       - A notch filter is applied to remove powerline noise (50/60 Hz).
+       - A bandpass filter is applied to retain frequencies in the range of 1-50 Hz.
+    2. **Re-referencing**:
+       - Common Average Reference (CAR) is applied to reduce background noise.
+    3. **Artifact Removal**:
+       - Independent Component Analysis (ICA) is optionally applied to remove artifacts like eye blinks and muscle movements.
+    4. **Smoothing**:
+       - A Hanning window is applied to smooth the signal.
+    5. **Denoising**:
+       - Discrete Wavelet Transform (DWT) is optionally applied to remove high-frequency noise.
+  - **Output**: Preprocessed EEG data ready for feature extraction.
+  - **Real-Time Aspect**: The preprocessing pipeline is optimized to handle data in chunks (256 samples), ensuring minimal latency.
+
+## 3. Feature Extraction
+
+### Feature Extraction Pipeline
+- **File**: `stream_data.py`
+- **Method**: `extract_features`
+  - **Input**: Preprocessed EEG data (14 channels, 256 samples per channel).
+  - **Steps**:
+    1. **Band Power**:
+       - Power in different frequency bands (delta, theta, alpha, beta, gamma) is computed using FFT.
+    2. **Hjorth Parameters**:
+       - Mobility and complexity are computed to capture signal dynamics.
+    3. **Spectral Entropy**:
+       - Entropy of the power spectral density is computed to measure signal randomness.
+    4. **Fractal Dimension**:
+       - Higuchi's fractal dimension is computed to capture signal complexity.
+    5. **Temporal Derivatives**:
+       - First and second-order derivatives are computed to capture temporal changes.
+    6. **Static Features**:
+       - Band power, Hjorth parameters, entropy, and fractal dimension are repeated along the time axis to match the temporal resolution of the EEG data.
+    7. **Concatenation**:
+       - All features are concatenated to form a single feature vector for each second of data.
+  - **Output**: Feature vector of shape (14, total_features).
+
+### Feature Sequence Extraction
+- **File**: `stream_data.py`
+- **Method**: `extract_features_sequence`
+  - **Input**: A 10-second window of EEG data (10, 14, 256).
+  - **Steps**:
+    1. For each second of data, features are extracted using the `extract_features` method.
+    2. The resulting feature vectors are flattened and combined into a sequence.
+  - **Output**: Feature sequence of shape (10, 43008).
+
+## 4. Real-Time Feature Window Management
+
+### Feature Window
+- **File**: `stream_data.py`
+- **Attribute**: `feature_window`
+  - A `deque` object with a maximum length of 10 is used to store the last 10 feature vectors (corresponding to 10 seconds of data).
+  - **Real-Time Aspect**: The feature window ensures that the system always has the latest 10 seconds of features for prediction.
+
+### Updating the Feature Window
+- **File**: `stream_data.py`
+- **Method**: `update_feature_window`
+  - **Input**: A single feature vector.
+  - **Steps**:
+    1. The feature vector is appended to the `feature_window`.
+    2. If the window is full, the oldest feature vector is automatically removed.
+  - **Real-Time Aspect**: The rolling nature of the feature window ensures that the system always has the most recent data for prediction.
+
+## 5. Prediction and Action Mapping
+
+### LSTM Prediction
+- **File**: `lstm_handler.py`
+- **Method**: `predict_sequence`
+  - **Input**: Feature sequence of shape (10, 43008).
+  - **Steps**:
+    1. The feature sequence is passed through the LSTM model.
+    2. The output is normalized using softmax for classification and scaled for continuous values.
+  - **Output**: A vector of shape (5,), where the first value represents the discrete action, and the remaining values represent continuous parameters.
+
+### RL Agent Prediction
+- **File**: `learning_rlagent.py`
+- **Method**: `step`
+  - **Input**: Action vector from the RL agent.
+  - **Steps**:
+    1. The action vector is mapped to drone commands using `_map_action_to_command`.
+    2. The mapped commands are sent to the drone using `send_rc_control`.
+  - **Real-Time Aspect**: The RL agent's predictions are directly translated into drone actions, enabling real-time control.
+
+## 6. Summary of Real-Time Workflow
+
+### Data Acquisition
+- EEG data is continuously streamed from the Emotiv device and added to the primary buffer.
+
+### Buffer Management
+- Data is moved from the primary buffer to the secondary buffer when full, ensuring a rolling window of the latest data.
+
+### Preprocessing
+- Data in the secondary buffer is preprocessed to remove noise and artifacts.
+
+### Feature Extraction
+- Preprocessed data is converted into feature vectors, which are added to the feature window.
+
+### Prediction
+- The feature window is used to generate a feature sequence, which is passed to the LSTM model for prediction.
+
+### Action Execution
+- The RL agent maps the LSTM output to drone commands, which are executed in real-time.
+
 This pipeline ensures that the system operates in real-time, with minimal latency between data acquisition and action execution.
 
 The feature extraction and cleaning process in the provided code involves several steps, which are implemented across the feature_extraction.py and stream_data.py files. Here's a detailed explanation of how the code works to clean and extract features from EEG data:
