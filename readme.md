@@ -231,15 +231,14 @@ EmotivStreamer class is designed to read EEG raw data, preprocess EEG raw data, 
 * **`model_utils.py`**:
 
 
-## Execution Flow
+**Run `main.py` with Tello drone connected:**
 
-**Run `main.py` with tello drone connected:**
-    * The `main.py` script starts by setting up logging and defining a signal handler to ensure graceful shutdown on hitting keyboardinterrupt `Ctrl+C`.
-    * It initializes instances of `EmotivStreamer`, `RealtimeEEGVisualizer`, and `KalmanFilter`.
-    * It attempts to connect to the Emotiv headset using `EmotivStreamer.connect()`.
-    * If the headset connection is successful, it attempts to connect to the Tello drone using `DroneControlEnv.connect_drone()`.
-    * It starts a background thread (`save_thread`) to continuously save the collected EEG data to an Excel file using the `save_data_continuously` function.
-    * It then calls the `preprocessing_thread` function, which contains the main data processing loop.
+- The `main.py` script starts by setting up logging and defining a signal handler to ensure graceful shutdown on hitting keyboard interrupt (`Ctrl+C`).
+- It initializes instances of `EmotivStreamer`, `RealtimeEEGVisualizer`, and `KalmanFilter`.
+- It attempts to connect to the Emotiv headset using `EmotivStreamer.connect()`.
+- If the headset connection is successful, it attempts to connect to the Tello drone using `DroneControlEnv.connect_drone()`.
+- It starts a background thread (`save_thread`) to continuously save the collected EEG data to an Excel file using the `save_data_continuously` function.
+- It then calls the `preprocessing_thread` function, which contains the main data processing loop.
 
 
 # Thread Management
