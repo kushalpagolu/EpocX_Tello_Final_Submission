@@ -207,7 +207,7 @@ Here's a breakdown of the purpose of each file in the project:
 ## Execution Flow
 
 
-**`main.py` Execution:**
+### main.py Execution:
     * The `main.py` script starts by setting up logging and defining a signal handler to ensure graceful shutdown on `Ctrl+C`.
     * It initializes instances of `EmotivStreamer`, `RealtimeEEGVisualizer`, and `KalmanFilter`.
     * It attempts to connect to the Emotiv headset using `EmotivStreamer.connect()`.
