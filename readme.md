@@ -1,4 +1,5 @@
 # Emotiv_Epoc_X_Tello_Control
+
 Project aims to control a Tello drone using real-time EEG data streamed from an Emotiv EPOC X headset.
 
 
@@ -232,8 +233,7 @@ EmotivStreamer class is designed to read EEG raw data, preprocess EEG raw data, 
 
 ## Execution Flow
 
-    **Run `main.py` with tello drone connected:**
-
+**Run `main.py` with tello drone connected:**
     * The `main.py` script starts by setting up logging and defining a signal handler to ensure graceful shutdown on hitting keyboardinterrupt `Ctrl+C`.
     * It initializes instances of `EmotivStreamer`, `RealtimeEEGVisualizer`, and `KalmanFilter`.
     * It attempts to connect to the Emotiv headset using `EmotivStreamer.connect()`.
