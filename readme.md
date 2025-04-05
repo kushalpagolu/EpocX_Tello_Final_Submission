@@ -322,12 +322,13 @@ def preprocessing_thread():
 # Preprocessing Thread 
 
 ## 1. Buffer Management and Updates
+To train the LSTM with enough data, I implemented a rolling buffers to constantly keep an instance of latest 10seconds of 14 * 256 frames of eeg raw data with preprocessing and extracted features for the 10 seconds of raw data. To understand how the cleaning and extraction happens, we need to be familiar with how and why.
 
 ### Buffer Initialization
 - **File**: `stream_data.py`
 - **Method**: `initialize_buffers`
   - Buffers are initialized as `deque` objects with a maximum length equal to the buffer size (256 samples, corresponding to 1 second of EEG data).
-  - Each channel (e.g., "AF3", "F7", etc.) has its own buffer.
+  - Each channel (e.g., "AF3", "F7", etc.) has its own buffer 14 * 256.
   - **Purpose**: To store incoming EEG data for each channel in a rolling manner, ensuring old data is replaced by new data when the buffer is full.
 
 ### Updating Buffers
@@ -445,16 +446,16 @@ def preprocessing_thread():
 
 
 
-### Critical Processing Modules
+# Critical Data Processing Modules
 
 
-# EEG Feature Extraction Pipeline
+## EEG Raw Data Preprocessing and Feature Extraction Pipeline
 
-## 📌 Overview
+EEG is notoriously noisy, so this stage is critical for ensuring good data quality for ML/RL models.
 
-This feature extraction pipeline transforms raw EEG signals into meaningful biomarkers for brain-controlled drone operation. The process cleans artifacts, removes noise, and extracts features/channel to enable precise mental state detection.
+This data preprocessing includes some methods which clean the data(signals) and prepare it for feature extraction pipeline which transforms raw EEG signals into meaningful biomarkers for brain-controlled drone operation. The process cleans artifacts, removes noise, and extracts features/channel to enable precise mental state detection.
 
-These steps are all about cleaning the raw EEG signals before extracting meaningful features. EEG is notoriously noisy, so this stage is critical for ensuring good data quality for ML/RL models.
+These steps are all about cleaning the raw EEG signals before extracting meaningful features. 
 
 EEG signals are very weak (µV range) and easily corrupted by:
 
