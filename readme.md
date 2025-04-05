@@ -454,9 +454,47 @@ Feature Window: 10s sequences → LSTM input
     
 **Threading:**
     - Data saving is handled in a separate background thread to prevent blocking the main data collection and visualization loop.
+    
+
+## Thread Synchronization Mechanism
+
+```python
+# Data Pipeline
+┌───────────────────────┐       ┌───────────────────────┐
+│ Streaming Thread      │       │ Processing Thread     │
+│ (Producer)            │       │ (Consumer)            │
+├───────────────────────┤       ├───────────────────────┤
+│ data_queue.put(packet)│───────▶ data_queue.get()      │
+└───────────────────────┘       └───────────────────────┘
+
+# Visualization Pipeline
+┌───────────────────────┐       ┌───────────────────────┐
+│ Streaming Thread      │       │ Main Thread           │
+│ (Producer)            │       │ (Consumer)            │
+├───────────────────────┤       ├───────────────────────┤
+│ viz_queue.put(packet) │───────▶ viz_queue.get()       │
+└───────────────────────┘       └───────────────────────┘
+
+
+
+```
+
+
+
+
+
+
+
+
+
 **Shutdown:**
     - The `signal_handler` function is called when the program receives a `Ctrl+C` signal. It sets the `stop_saving_thread` event to signal the data saving thread to stop, disconnects from the Emotiv headset, closes all matplotlib plots, and exits the program.
 
+
+```
+stop_main_loop = threading.Event() # Global shutdown signal
+lock = threading.Lock()            # Resource access control
+```
 
 
 
@@ -660,44 +698,7 @@ The feature extraction and cleaning process in the provided code involves severa
 
 
 
-
-## Thread Synchronization Mechanism
-
-```python
-# Data Pipeline
-┌───────────────────────┐       ┌───────────────────────┐
-│ Streaming Thread      │       │ Processing Thread     │
-│ (Producer)            │       │ (Consumer)            │
-├───────────────────────┤       ├───────────────────────┤
-│ data_queue.put(packet)│───────▶ data_queue.get()      │
-└───────────────────────┘       └───────────────────────┘
-
-# Visualization Pipeline
-┌───────────────────────┐       ┌───────────────────────┐
-│ Streaming Thread      │       │ Main Thread           │
-│ (Producer)            │       │ (Consumer)            │
-├───────────────────────┤       ├───────────────────────┤
-│ viz_queue.put(packet) │───────▶ viz_queue.get()       │
-└───────────────────────┘       └───────────────────────┘
-
-
-
-```
-
-
-
-
-
-# System Control
-
-```
-stop_main_loop = threading.Event() # Global shutdown signal
-lock = threading.Lock()            # Resource access control
-```
-
-
-
-
+---
 
 
 ## 🚨 Why This Pipeline Matters
