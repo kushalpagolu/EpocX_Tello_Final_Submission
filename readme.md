@@ -441,13 +441,16 @@ Feature Window: 10s sequences → LSTM input
     2. The mapped commands are sent to the drone using `send_rc_control`.
   - **Real-Time Aspect**: The RL agent's predictions are directly translated into drone actions, enabling real-time control.
 
+
 ### RL Agent and Drone Control (In `learning_rlagent.py`)
-    - The `DroneControlEnv` class defines the environment in which the RL agent learns to control the drone.
-    - The `connect_drone` method attempts to connect to the Tello drone and sends a takeoff command.
-    - The `step` method receives an action from the RL agent, translates it into drone control commands (forward/backward speed, left/right speed), and sends these commands to the drone using `TelloController.send_rc_control()`.
-    - The `update_state` method updates the current state of the environment based on the incoming EEG data.
-    - The `load_or_create_model` method loads a pre-trained PPO model or creates a new one if none exists.
-    - The `train_step` method processes EEG data, updates the environment state, predicts an action using the RL model, and (optionally) allows for human intervention to override the agent's action.
+
+- The `DroneControlEnv` class defines the environment in which the RL agent learns to control the drone.
+- The `connect_drone` method attempts to connect to the Tello drone and sends a takeoff command.
+- The `step` method receives an action from the RL agent, translates it into drone control commands (forward/backward speed, left/right speed), and sends these commands to the drone using `TelloController.send_rc_control()`.
+- The `update_state` method updates the current state of the environment based on the incoming EEG data.
+- The `load_or_create_model` method loads a pre-trained PPO model or creates a new one if none exists.
+- The `train_step` method processes EEG data, updates the environment state, predicts an action using the RL model, and (optionally) allows for human intervention to override the agent's action.
+
     
 **Threading:**
     - Data saving is handled in a separate background thread to prevent blocking the main data collection and visualization loop.
