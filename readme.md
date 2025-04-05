@@ -206,14 +206,16 @@ Here's a breakdown of the purpose of each file in the project:
 
 ## Execution Flow
 
-**`main.py` Execution:**
 
+**`main.py` Execution:**
     * The `main.py` script starts by setting up logging and defining a signal handler to ensure graceful shutdown on `Ctrl+C`.
     * It initializes instances of `EmotivStreamer`, `RealtimeEEGVisualizer`, and `KalmanFilter`.
     * It attempts to connect to the Emotiv headset using `EmotivStreamer.connect()`.
     * If the headset connection is successful, it attempts to connect to the Tello drone using `DroneControlEnv.connect_drone()`.
     * It starts a background thread (`save_thread`) to continuously save the collected EEG data to an Excel file using the `save_data_continuously` function.
     * It then calls the `preprocessing_thread` function, which contains the main data processing loop.
+
+
 
 
 # Thread Management
