@@ -173,18 +173,23 @@ python main.py --connect-drone
 
 ### Testing the Project
 
+
 **Initial Connection:**
     * The script will first attempt to connect to the Emotiv headset. Check the console output for the message "Emotiv EEG device connected." If the connection fails, ensure the headset is properly connected and the drivers are installed.
-    * Next, the script will attempt to connect to the Tello drone. Check the console output for the message "Drone connected successfully"
+    * Next, the script will attempt to connect to the Tello drone. Check the console output for the message "Drone connected successfully".
+    
 **Real-time EEG Visualization:**
     * If the Emotiv headset is successfully connected, a Matplotlib window will appear, displaying the real-time EEG signals from the 14 channels and the head movement trajectory based on gyro data.
+    
 **Drone Control:**
     * After the drone connects, it should automatically take off. The RL agent will then start sending control commands to the drone based on the EEG data.
     * Observe the drone's behavior. Initially, the control might be erratic as the RL agent is still learning.
     * You can interrupt the script by pressing `Ctrl+C`. This will trigger the shutdown sequence, landing the drone and disconnecting from the devices.
 
 
-### EmotivStreamer class is designed to read EEG raw data, preprocess EEG raw data, extract meaningful features, and classify brain states using an LSTM model to adapt and learn and predicts an input vector to an RL agent for real-time drone control. Let's analyze the code in depth.
+### EmotivStreamer class is designed to read EEG raw data, preprocess EEG raw data, extract meaningful features, and classify brain states using an LSTM model to adapt and learn and predicts an input vector to an RL agent for real-time drone control. 
+
+Let's analyze the code in depth.
 
 
 ## File Structure and Descriptions
