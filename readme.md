@@ -202,6 +202,7 @@ Here's a breakdown of the purpose of each file in the project:
 ## Execution Flow
 
 **`main.py` Execution:**
+
     * The `main.py` script starts by setting up logging and defining a signal handler to ensure graceful shutdown on `Ctrl+C`.
     * It initializes instances of `EmotivStreamer`, `RealtimeEEGVisualizer`, and `KalmanFilter`.
     * It attempts to connect to the Emotiv headset using `EmotivStreamer.connect()`.
@@ -212,10 +213,12 @@ Here's a breakdown of the purpose of each file in the project:
 
 # Thread Management
 
+
 ```python
 stream_thread = threading.Thread(target=streaming_thread, ...)
 preprocess_thread = threading.Thread(target=preprocessing_thread, ...)
 ```
+
 # Queue Initialization
 
 ```
@@ -224,6 +227,7 @@ visualization_queue = queue.Queue() # Processed data for visualization
 ```
 
 # System Initialization
+
 ```
 emotiv = EmotivStreamer()           # Hardware interface
 visualizer = RealtimeEEGVisualizer()# 3D brain visualization
