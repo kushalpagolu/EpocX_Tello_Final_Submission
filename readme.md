@@ -163,6 +163,11 @@ brew install hidapi
 python main.py
 ```
 
+This will also launch a realtime visualizer showing 14 channels raw eeg data and gyro plot.
+
+![raw_signals_perfect](https://github.com/user-attachments/assets/9eb951d8-d104-47ad-99c1-856881a06389)
+
+
 
 3. **Run `main.py` with tello drone connected:**
 
