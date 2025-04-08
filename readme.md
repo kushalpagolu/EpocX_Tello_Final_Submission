@@ -212,6 +212,24 @@ A multi-threaded architecture processes EEG data from an Emotiv headset, extract
 ### Let's analyze the code in depth.
 
 
+## Threading Structure:
+
+### Threads:
+streaming_thread: Streams data from the Emotiv device.
+preprocessing_thread: Processes data and extracts features.
+save_data_continuously: Saves data in the background.
+Shared Resources:
+data_queue: Shared between streaming_thread and preprocessing_thread.
+feature_queue: Shared between preprocessing_thread and visualizers.
+stop_saving_thread and stop_main_loop: Used to signal threads to stop.
+Signal Handling:
+
+The signal_handler function is invoked when Ctrl+C is detected. It sets the stop_saving_thread and stop_main_loop events, disconnects the Emotiv device, and saves any remaining data.
+Issue:
+
+Threads may be blocked (e.g., waiting for data in data_queue) or performing long-running tasks (e.g., feature extraction), preventing them from checking the stop_main_loop event promptly.
+The Ctrl+C signal is not interrupting these threads effectively.
+
 ## File Structure and Descriptions
 
 Here's a breakdown of the purpose of each file in the project:
@@ -460,6 +478,172 @@ Feature Window: 10s sequences → LSTM input
 **Threading:**
     - Data saving is handled in a separate background thread to prevent blocking the main data collection and visualization loop.
     
+
+### **How Threading Works in the Current Code**
+
+The threading in your code is designed to decouple **data streaming**, **data preprocessing**, and **visualization** into separate threads. This allows the application to handle real-time EEG data efficiently by performing multiple tasks concurrently. Here's a breakdown of how threading works in your code:
+
+---
+
+### **1. Threads in the Code**
+The code uses the following threads:
+1. **`streaming_thread`**:
+   - Responsible for streaming raw EEG data from the Emotiv device.
+   - Reads data packets from the device and places them into a shared `data_queue` for preprocessing.
+   - Also sends raw data to the `visualization_queue` for real-time visualization.
+
+2. **`preprocessing_thread`**:
+   - Consumes data from the `data_queue` and processes it (e.g., updating EEG buffers, extracting features).
+   - Places processed features into the `feature_queue` for visualization or further use (e.g., LSTM predictions or RL agent actions).
+
+3. **`save_data_continuously`**:
+   - Saves data from the `data_store` to disk in the background.
+   - This ensures that data is not lost in case of a crash or interruption.
+
+4. **Main Thread**:
+   - Runs the visualization logic (`run_visualizations_on_main_thread`).
+   - Handles animations and updates for visualizers (e.g., 3D EEG, feature plots).
+   - Waits for signals (e.g., `Ctrl+C`) to gracefully shut down all threads.
+
+---
+
+### **2. How Streaming and Preprocessing Work Together**
+The `streaming_thread` and `preprocessing_thread` work together using a **producer-consumer model** with `queue.Queue` as the shared buffer.
+
+#### **Step-by-Step Workflow**
+1. **Streaming Thread**:
+   - Reads raw EEG data packets from the Emotiv device.
+   - Places each packet into the `data_queue` for preprocessing.
+   - Sends the same packet to the `visualization_queue` for real-time visualization.
+
+2. **Preprocessing Thread**:
+   - Waits for data in the `data_queue` (using `queue.get()`).
+   - Processes the data (e.g., updating EEG buffers, extracting features).
+   - Places the processed features into the `feature_queue` for visualization or further use.
+
+3. **Visualization in the Main Thread**:
+   - The main thread consumes data from the `visualization_queue` and `feature_queue` to update visualizations.
+   - Animations are handled using `matplotlib.animation.FuncAnimation`.
+
+---
+
+### **3. Key Components of Threading**
+
+#### **Shared Queues**
+- **`data_queue`**:
+  - Shared between the `streaming_thread` (producer) and `preprocessing_thread` (consumer).
+  - Holds raw EEG data packets.
+
+- **`visualization_queue`**:
+  - Shared between the `streaming_thread` (producer) and the main thread (consumer).
+  - Holds raw EEG data packets for real-time visualization.
+
+- **`feature_queue`**:
+  - Shared between the `preprocessing_thread` (producer) and the main thread (consumer).
+  - Holds processed feature data for visualization.
+
+#### **Thread Control**
+- **`stop_main_loop`**:
+  - A `threading.Event` used to signal all threads to stop.
+  - Checked periodically in the `streaming_thread` and `preprocessing_thread` to exit gracefully.
+
+- **`stop_saving_thread`**:
+  - A `threading.Event` used to signal the `save_data_continuously` thread to stop.
+
+---
+
+### **4. How Data Flows Through the Threads**
+
+#### **Streaming Thread**
+1. Reads raw EEG data packets from the Emotiv device.
+2. Places the packets into:
+   - `data_queue` for preprocessing.
+   - `visualization_queue` for real-time visualization.
+
+#### **Preprocessing Thread**
+1. Waits for data in the `data_queue`.
+2. Processes the data:
+   - Updates EEG buffers.
+   - Extracts features (e.g., band power, Hjorth parameters).
+3. Places the processed features into the `feature_queue`.
+
+#### **Main Thread (Visualization)**
+1. Waits for data in the `visualization_queue` and `feature_queue`.
+2. Updates visualizations using `matplotlib.animation.FuncAnimation`.
+
+---
+
+### **5. Why This Design Works**
+- **Decoupling**:
+  - Streaming, preprocessing, and visualization are decoupled into separate threads, ensuring that each task can run independently without blocking the others.
+
+- **Real-Time Processing**:
+  - The `streaming_thread` continuously streams data, while the `preprocessing_thread` processes it in parallel.
+  - This ensures that data is processed and visualized in real time.
+
+- **Graceful Shutdown**:
+  - The `stop_main_loop` event allows all threads to exit gracefully when `Ctrl+C` is detected.
+
+---
+
+### **6. Suggested Improvements**
+To make the threading more robust and ensure a graceful shutdown, consider the following:
+
+#### **1. Handle `queue.Empty` Gracefully**
+- Use a timeout in `queue.get()` to periodically check the `stop_main_loop` event.
+- Example:
+  ```python
+  try:
+      packet = data_queue.get(timeout=1)  # Wait for 1 second
+  except queue.Empty:
+      if stop_main_loop.is_set():
+          break  # Exit the loop if stop signal is set
+  ```
+
+#### **2. Add Exception Handling**
+- Wrap the main loop of each thread in a `try-except` block to catch unexpected errors.
+- Example:
+  ```python
+  try:
+      while not stop_main_loop.is_set():
+          # Thread logic here
+  except Exception as e:
+      logging.error(f"Error in thread: {e}")
+  ```
+
+#### **3. Join Threads in the `finally` Block**
+- Ensure that all threads are joined in the `finally` block of the main program.
+- Example:
+  ```python
+  finally:
+      stop_main_loop.set()  # Signal all threads to stop
+      stream_thread.join()
+      preprocess_thread.join()
+      save_thread.join()
+  ```
+
+#### **4. Optimize Visualization Updates**
+- Use separate update functions for each visualizer to avoid blocking the main thread.
+- Example:
+  ```python
+  def update_visualizations():
+      while not visualization_queue.empty():
+          packet = visualization_queue.get()
+          visualizer.add_data(packet)
+  ```
+
+---
+
+### **Summary**
+- The `streaming_thread` streams raw EEG data and places it into shared queues.
+- The `preprocessing_thread` processes the data and extracts features.
+- The main thread handles visualization using the processed data.
+- Shared queues (`data_queue`, `visualization_queue`, `feature_queue`) enable communication between threads.
+- Graceful shutdown is achieved using `threading.Event` objects (`stop_main_loop`, `stop_saving_thread`).
+
+This design ensures that streaming, preprocessing, and visualization can run concurrently without blocking each other, enabling real-time EEG data processing and visualization.
+
+
 
 ## Thread Synchronization Mechanism
 
