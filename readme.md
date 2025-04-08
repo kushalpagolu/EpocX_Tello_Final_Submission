@@ -481,7 +481,7 @@ Feature Window: 10s sequences → LSTM input
 
 ### **How Threading Works in the Current Code**
 
-The threading in your code is designed to decouple **data streaming**, **data preprocessing**, and **visualization** into separate threads. This allows the application to handle real-time EEG data efficiently by performing multiple tasks concurrently. Here's a breakdown of how threading works in your code:
+The threading is designed to decouple **data streaming**, **data preprocessing**, and **visualization** into separate threads. This allows the application to handle real-time EEG data efficiently by performing multiple tasks concurrently. Here's a breakdown of how threading works in your code:
 
 ---
 
