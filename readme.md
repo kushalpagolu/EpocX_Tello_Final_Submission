@@ -247,21 +247,7 @@ EmotivStreamer class is designed to read EEG raw data, preprocess EEG raw data, 
 
 
 
----
 
-### **1. Threads in the Code**
-The code uses the following threads:
-1. 
-
-2. **`preprocessing_thread`**:
-  
-
-3. **`save_data_continuously`**:
-   - Data saving is handled in a separate background thread to prevent blocking the main data collection and visualization loop.
-   - Saves data from the `data_store` to disk in the background.
-   - This ensures that data is not lost in case of a crash or interruption.
-
-5. 
 
 ---
 
@@ -316,9 +302,9 @@ The threading is designed to decouple **data streaming**, **data preprocessing**
 ###  Thread Responsibilities
 
 **Main Thread**:
-   - Runs the visualization logic (`run_visualizations_on_main_thread`).
-   - Handles animations and updates for visualizers (e.g., 3D EEG, feature plots).
-   - Waits for signals (e.g., `Ctrl+C`) to gracefully shut down all threads.
+- Runs the visualization logic (`run_visualizations_on_main_thread`).
+- Handles animations and updates for visualizers (e.g., 3D EEG, feature plots).
+- Waits for signals (e.g., `Ctrl+C`) to gracefully shut down all threads.
 
 
 ```python
@@ -331,7 +317,6 @@ The threading is designed to decouple **data streaming**, **data preprocessing**
 #### Signal Handling:
 
 - The signal_handler function is invoked when Ctrl+C is detected. It sets the stop_saving_thread and stop_main_loop events, disconnects the Emotiv device, and saves any remaining data.
-Issue:
 
 - Threads may be blocked (e.g., waiting for data in data_queue) or performing long-running tasks (e.g., feature extraction), preventing them from checking the stop_main_loop event promptly.
 The Ctrl+C signal is not interrupting these threads effectively.
@@ -361,8 +346,7 @@ def streaming_thread():
 - Consumes data from the `data_queue` and processes it (e.g., updating EEG buffers, extracting features).
 - Places processed features into the `feature_queue` for visualization or further use (e.g., LSTM predictions or RL agent actions).
 
-
-```python
+```
 def preprocessing_thread():
     while active:
         packet = data_queue.get()           # Retrieve raw data
@@ -374,6 +358,7 @@ def preprocessing_thread():
 ```
 
 
+---
 
 **Data Collection and Processing:**
     * The preprocessing and feature extraction processes are integrated into the real-time streaming pipeline in stream_data.py.
