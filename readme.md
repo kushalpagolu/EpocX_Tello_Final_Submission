@@ -753,7 +753,7 @@ The cleaning process is implemented in the stream_data.py file, specifically in 
 
 
 
-## 🔍 Detailed Processing Stages
+#### 🔍 Detailed Preprocessing/Cleaning Stages
 
 1. **Noise Removal**:
    - **Notch Filter** (`apply_notch_filter` in feature_extraction.py):
@@ -976,27 +976,11 @@ yaw_velocity = -30
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ---
 
 ## 🚨 EEG Signal Processing Fundamentals
 
 ---
-
-
 
 
 Neural activity in the human brain begins between the 17th and 23rd weeks of prenatal development. From this early stage onward, it is believed that the brain continuously generates electrical signals that reflect not only brain function but also the overall physiological state of the body. This insight drives the use of advanced digital signal processing techniques to analyze electroencephalogram (EEG) signals recorded from the human brain.
@@ -1020,7 +1004,7 @@ The electrical currents in the brain are primarily the result of ion exchange—
 
 
 
-Figure: The three main layers of the brain including their approximate resistivities and thicknesses.
+- Figure: The three main layers of the brain including their approximate resistivities and thicknesses.
 
 ### 1. Critical Preprocessing Stages
 
