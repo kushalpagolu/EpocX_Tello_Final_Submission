@@ -736,10 +736,14 @@ Raw EEG → Bandpass Filter → Notch Filter → ICA → CAR → ANC → DWT
     DWT --> F[Feature Extraction]
 ```
 
+
 ---
 
-## 🔍 Detailed Processing Stages
+#### **Preprocessing or Cleaning raw EEG**
 
+
+
+The cleaning process is implemented in the stream_data.py file, specifically in the `preprocess_eeg_data` method. It uses several functions from feature_extraction.py to clean the raw EEG data.
 
 
 <p align="center">
@@ -748,9 +752,8 @@ Raw EEG → Bandpass Filter → Notch Filter → ICA → CAR → ANC → DWT
 
 
 
-The cleaning process is implemented in the stream_data.py file, specifically in the `preprocess_eeg_data` method. It uses several functions from feature_extraction.py to clean the raw EEG data.
 
-#### **Steps in Preprocessing**
+## 🔍 Detailed Processing Stages
 
 1. **Noise Removal**:
    - **Notch Filter** (`apply_notch_filter` in feature_extraction.py):
@@ -785,7 +788,7 @@ The cleaning process is implemented in the stream_data.py file, specifically in 
 The feature extraction process is implemented in the `extract_features` method in stream_data.py. It uses several functions from feature_extraction.py to compute various features from the preprocessed EEG data.
 
 
-## 🔍 Detailed Feature extraction stages 
+#### **Steps in Feature Extraction**
 
 
 <p align="center">
@@ -795,7 +798,8 @@ The feature extraction process is implemented in the `extract_features` method i
 </p>
 
 
-#### **Steps in Feature Extraction**
+#### 🔍 Detailed Feature extraction stages 
+
 
 1. **Band Power**:
    - **Function**: `compute_band_power` in feature_extraction.py
@@ -835,7 +839,7 @@ The feature extraction process is implemented in the `extract_features` method i
 
 ## To know more about the preprocessing and feature extraction methods used, you can scroll down to the _'EEG Signal Processing Fundamentals'_ section.
 
-
+---
 
 ### ** Integration with Real-Time Streaming**
 
@@ -861,7 +865,8 @@ The preprocessing and feature extraction processes are integrated into the real-
    - **Description**:
      - Retrieves the 10-second feature sequence from the feature window for prediction.
 
-This pipeline ensures that the EEG data is cleaned, processed, and converted into meaningful features in real-time, enabling accurate predictions and control of the Tello drone.
+
+- This pipeline ensures that the EEG data is cleaned, processed, and converted into meaningful features in real-time, enabling accurate predictions and control of the Tello drone.
 
 
 
