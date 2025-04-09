@@ -864,6 +864,9 @@ This pipeline ensures that the EEG data is cleaned, processed, and converted int
 
 
 ## Drone Control Summary
+
+---
+
 1. LSTM Model Prediction for RL Agent
 The LSTM model processes EEG feature sequences to predict actions for the RL agent. Here's how it works:
 
