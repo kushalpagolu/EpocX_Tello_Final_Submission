@@ -212,23 +212,7 @@ A multi-threaded architecture processes EEG data from an Emotiv headset, extract
 ### Let's analyze the code in depth.
 
 
-## Threading Structure:
 
-### Threads:
-streaming_thread: Streams data from the Emotiv device.
-preprocessing_thread: Processes data and extracts features.
-save_data_continuously: Saves data in the background.
-Shared Resources:
-data_queue: Shared between streaming_thread and preprocessing_thread.
-feature_queue: Shared between preprocessing_thread and visualizers.
-stop_saving_thread and stop_main_loop: Used to signal threads to stop.
-Signal Handling:
-
-The signal_handler function is invoked when Ctrl+C is detected. It sets the stop_saving_thread and stop_main_loop events, disconnects the Emotiv device, and saves any remaining data.
-Issue:
-
-Threads may be blocked (e.g., waiting for data in data_queue) or performing long-running tasks (e.g., feature extraction), preventing them from checking the stop_main_loop event promptly.
-The Ctrl+C signal is not interrupting these threads effectively.
 
 ## File Structure and Descriptions
 
@@ -263,10 +247,32 @@ EmotivStreamer class is designed to read EEG raw data, preprocess EEG raw data, 
 
 # Thread Management
 
-```python
-stream_thread = threading.Thread(target=streaming_thread, ...)
-preprocess_thread = threading.Thread(target=preprocessing_thread, ...)
-```
+
+### **How Threading Works in the Current Code**
+
+The threading is designed to decouple **data streaming**, **data preprocessing**, and **visualization** into separate threads. This allows the application to handle real-time EEG data efficiently by performing multiple tasks concurrently. Here's a breakdown of how threading works :
+
+---
+
+### **1. Threads in the Code**
+The code uses the following threads:
+1. 
+
+2. **`preprocessing_thread`**:
+  
+
+3. **`save_data_continuously`**:
+   - Data saving is handled in a separate background thread to prevent blocking the main data collection and visualization loop.
+   - Saves data from the `data_store` to disk in the background.
+   - This ensures that data is not lost in case of a crash or interruption.
+
+5. 
+
+---
+
+
+
+
 
 # Queue Initialization
 
@@ -274,6 +280,22 @@ preprocess_thread = threading.Thread(target=preprocessing_thread, ...)
 data_queue = queue.Queue()          # Raw EEG data pipeline
 visualization_queue = queue.Queue() # Processed data for visualization
 ```
+
+
+#### Shared Resources:
+
+- data_queue: Shared between streaming_thread and preprocessing_thread.
+- feature_queue: Shared between preprocessing_thread and visualizers.
+
+
+
+
+
+```python
+stream_thread = threading.Thread(target=streaming_thread, ...)
+preprocess_thread = threading.Thread(target=preprocessing_thread, ...)
+```
+
 
 # System Initialization
 
@@ -284,9 +306,49 @@ env = DroneControlEnv(...)          # Drone control interface
 ```
 
 
-### 2. Thread Responsibilities
+## Threading Structure:
+
+### Threads:
+
+- streaming_thread: Streams data from the Emotiv device.
+
+- preprocessing_thread: Processes data and extracts features.
+
+- save_data_continuously: Saves data in the background.
+
+###  Thread Responsibilities
+
+**Main Thread**:
+   - Runs the visualization logic (`run_visualizations_on_main_thread`).
+   - Handles animations and updates for visualizers (e.g., 3D EEG, feature plots).
+   - Waits for signals (e.g., `Ctrl+C`) to gracefully shut down all threads.
+
+
+```python
+
+# Run visualization on the main thread
+            run_visualizations_on_main_thread(visualizer, visualization_queue, feature_visualizer, feature_queue, derivatives_visualizer, second_order_derivatives_visualizer, fractal_visualizer, entropy_visualizer, eeg_filtered_visualizer)
+```
+
+
+#### Signal Handling:
+
+- The signal_handler function is invoked when Ctrl+C is detected. It sets the stop_saving_thread and stop_main_loop events, disconnects the Emotiv device, and saves any remaining data.
+Issue:
+
+- Threads may be blocked (e.g., waiting for data in data_queue) or performing long-running tasks (e.g., feature extraction), preventing them from checking the stop_main_loop event promptly.
+The Ctrl+C signal is not interrupting these threads effectively.
+
+- stop_saving_thread and stop_main_loop: Used to signal threads to stop.
+
+
 
 **Streaming Thread:**
+
+   - Responsible for streaming raw EEG data from the Emotiv device.
+   - Reads data packets from the device and places them into a shared `data_queue` for preprocessing.
+   - Also sends raw data to the `visualization_queue` for real-time visualization.
+
 
 ```python
 def streaming_thread():
@@ -298,6 +360,10 @@ def streaming_thread():
 ```
 
 **Processing Thread:**
+
+    - Consumes data from the `data_queue` and processes it (e.g., updating EEG buffers, extracting features).
+    - Places processed features into the `feature_queue` for visualization or further use (e.g., LSTM predictions or RL agent actions).
+
 
 ```python
 def preprocessing_thread():
@@ -311,33 +377,36 @@ def preprocessing_thread():
 ```
 
 
+
 **Data Collection and Processing:**
     * The preprocessing and feature extraction processes are integrated into the real-time streaming pipeline in stream_data.py.
 
 #### **Steps in Real-Time Integration**
 
-1. **Data Acquisition**:
+ **Data Acquisition**:
    - **Method**: `read_emotiv_data` in stream_data.py
    - **Description**:
      - Reads raw EEG data packets from the Emotiv device and parses them into a dictionary format.
 
-
-3. **Preprocessing and Feature Extraction**:
+ **Preprocessing and Feature Extraction**:
    - **Method**: `process_and_extract_features` in stream_data.py. You can get more details in preprocessing thread.
    - **Description**:
      - Preprocesses the data in the secondary buffer and extracts features.
      - Updates the feature window with the extracted feature vector.
 
-4. **Feature Sequence for Prediction**:
+ **Feature Sequence for Prediction**:
    - **Method**: `get_feature_sequence` in stream_data.py
    - **Description**:
      - Retrieves the 10-second feature sequence from the feature window for prediction.
      - To implement this, a rolling buffer management is used which is explained in detail in preprocessing thread.
 
 
-# Preprocessing Thread 
+
+
+# Preprocessing Thread in depth
 
 ## 1. Buffer Management and Updates
+
 To train the LSTM with enough data, I implemented rolling buffers to constantly keep an instance of latest 10seconds of 14 * 256 frames of eeg raw data with preprocessing and extracted features for the 10 seconds of raw data. To understand the cleaning and extraction process, we need to be familiar with how and why.
 
 
@@ -475,38 +544,9 @@ Feature Window: 10s sequences → LSTM input
 - The `load_or_create_model` method loads a pre-trained PPO model or creates a new one if none exists.
 - The `train_step` method processes EEG data, updates the environment state, predicts an action using the RL model, and (optionally) allows for human intervention to override the agent's action.
 
-    
-**Threading:**
-    - Data saving is handled in a separate background thread to prevent blocking the main data collection and visualization loop.
-    
 
-### **How Threading Works in the Current Code**
 
-The threading is designed to decouple **data streaming**, **data preprocessing**, and **visualization** into separate threads. This allows the application to handle real-time EEG data efficiently by performing multiple tasks concurrently. Here's a breakdown of how threading works :
 
----
-
-### **1. Threads in the Code**
-The code uses the following threads:
-1. **`streaming_thread`**:
-   - Responsible for streaming raw EEG data from the Emotiv device.
-   - Reads data packets from the device and places them into a shared `data_queue` for preprocessing.
-   - Also sends raw data to the `visualization_queue` for real-time visualization.
-
-2. **`preprocessing_thread`**:
-   - Consumes data from the `data_queue` and processes it (e.g., updating EEG buffers, extracting features).
-   - Places processed features into the `feature_queue` for visualization or further use (e.g., LSTM predictions or RL agent actions).
-
-3. **`save_data_continuously`**:
-   - Saves data from the `data_store` to disk in the background.
-   - This ensures that data is not lost in case of a crash or interruption.
-
-4. **Main Thread**:
-   - Runs the visualization logic (`run_visualizations_on_main_thread`).
-   - Handles animations and updates for visualizers (e.g., 3D EEG, feature plots).
-   - Waits for signals (e.g., `Ctrl+C`) to gracefully shut down all threads.
-
----
 
 ### **2. How Streaming and Preprocessing Work Together**
 The `streaming_thread` and `preprocessing_thread` work together using a **producer-consumer model** with `queue.Queue` as the shared buffer.
@@ -572,7 +612,7 @@ The `streaming_thread` and `preprocessing_thread` work together using a **produc
 1. Waits for data in the `visualization_queue` and `feature_queue`.
 2. Updates visualizations using `matplotlib.animation.FuncAnimation`.
 
----
+
 
 ### **5. Why This Design Works**
 - **Decoupling**:
@@ -598,7 +638,7 @@ The `streaming_thread` and `preprocessing_thread` work together using a **produc
 
 This design ensures that streaming, preprocessing, and visualization can run concurrently without blocking each other, enabling real-time EEG data processing and visualization.
 
-
+---
 
 ## Thread Synchronization Mechanism
 
