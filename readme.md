@@ -792,7 +792,10 @@ The feature extraction process is implemented in the `extract_features` method i
    - All features are concatenated to form a single feature vector for each second of data.
 
 
-# To know more abot the preprocessing and feature extraction methods used, you can scroll down to the _'Why This Pipeline Matters'_ section.
+
+---
+
+## To know more about the preprocessing and feature extraction methods used, you can scroll down to the _'Why This Pipeline Matters'_ section.
 
 
 
@@ -844,6 +847,10 @@ The feature extraction and cleaning process in the provided code involves severa
 
 
 
+
+
+
+---
 
 ## 🚨 Why This Pipeline Matters
 ---
