@@ -245,12 +245,7 @@ EmotivStreamer class is designed to read EEG raw data, preprocess EEG raw data, 
 - It then calls the `preprocessing_thread` function, which contains the main data processing loop.
 
 
-# Thread Management
 
-
-### **How Threading Works in the Current Code**
-
-The threading is designed to decouple **data streaming**, **data preprocessing**, and **visualization** into separate threads. This allows the application to handle real-time EEG data efficiently by performing multiple tasks concurrently. Here's a breakdown of how threading works :
 
 ---
 
@@ -306,15 +301,17 @@ env = DroneControlEnv(...)          # Drone control interface
 ```
 
 
+# Thread Management
+
+
 ## Threading Structure:
 
-### Threads:
 
-- streaming_thread: Streams data from the Emotiv device.
 
-- preprocessing_thread: Processes data and extracts features.
+### **How Threading Works in the Current Code**
 
-- save_data_continuously: Saves data in the background.
+The threading is designed to decouple **data streaming**, **data preprocessing**, and **visualization** into separate threads. This allows the application to handle real-time EEG data efficiently by performing multiple tasks concurrently. Here's a breakdown of how threading works :
+
 
 ###  Thread Responsibilities
 
@@ -345,9 +342,9 @@ The Ctrl+C signal is not interrupting these threads effectively.
 
 **Streaming Thread:**
 
-   - Responsible for streaming raw EEG data from the Emotiv device.
-   - Reads data packets from the device and places them into a shared `data_queue` for preprocessing.
-   - Also sends raw data to the `visualization_queue` for real-time visualization.
+- Responsible for streaming raw EEG data from the Emotiv device.
+- Reads data packets from the device and places them into a shared `data_queue` for preprocessing.
+- Also sends raw data to the `visualization_queue` for real-time visualization.
 
 
 ```python
@@ -361,8 +358,8 @@ def streaming_thread():
 
 **Processing Thread:**
 
-    - Consumes data from the `data_queue` and processes it (e.g., updating EEG buffers, extracting features).
-    - Places processed features into the `feature_queue` for visualization or further use (e.g., LSTM predictions or RL agent actions).
+- Consumes data from the `data_queue` and processes it (e.g., updating EEG buffers, extracting features).
+- Places processed features into the `feature_queue` for visualization or further use (e.g., LSTM predictions or RL agent actions).
 
 
 ```python
