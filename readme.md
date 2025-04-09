@@ -826,7 +826,7 @@ The feature extraction process is implemented in the `extract_features` method i
 
 ---
 
-## To know more about the preprocessing and feature extraction methods used, you can scroll down to the _'Why This Pipeline Matters'_ section.
+## To know more about the preprocessing and feature extraction methods used, you can scroll down to the _'EEG Signal Processing Fundamentals'_ section.
 
 
 
@@ -867,33 +867,62 @@ This pipeline ensures that the EEG data is cleaned, processed, and converted int
 
 ---
 
-1. LSTM Model Prediction for RL Agent
-The LSTM model processes EEG feature sequences to predict actions for the RL agent. Here's how it works:
 
-Input to the LSTM Model:
 
-A 10-second EEG feature sequence of shape (10, 10878) is passed to the LSTM model.
-The feature sequence is flattened and represents the processed EEG data.
-Output of the LSTM Model:
+#### EEG Feature Sequence:
 
-The LSTM model outputs a vector of shape (5,):
-action[0]: A discrete action value (scaled between 0 and 1), which is later mapped to one of 9 high-level commands (e.g., hover, move forward, ascend).
-action[1:]: Four continuous values (scaled between -1 and 1) that represent fine-grained velocity adjustments for the drone's movement:
-left_right_velocity
-forward_backward_velocity
-up_down_velocity
-yaw_velocity
-How the LSTM Model Helps:
+- A 10-second EEG feature sequence is passed to the LSTM model.
+- Example input shape: (10, 10878).
+- LSTM Model Output:
+
+
+#### EEG Data Processing:
+
+- The EEG data is streamed and processed into feature sequences.
+- The processed features are passed to the LSTM model for action prediction.
+
+#### LSTM Model Prediction for RL Agent
+
+- The LSTM model processes EEG feature sequences to predict actions for the RL agent. Here's how it works:
+
+#### Input to the LSTM Model:
+
+- A 10-second EEG feature sequence of shape (10, 10878) is passed to the LSTM model.
+- The feature sequence is flattened and represents the processed EEG data.
+
+#### Output of the LSTM Model:
+
+- The LSTM model outputs a vector of shape (5,):
+- action[0]: A discrete action value (scaled between 0 and 1), which is later mapped to one of 9 high-level commands (e.g., hover, move forward, ascend).
+- action[1:]: Four continuous values (scaled between -1 and 1) that represent fine-grained velocity adjustments for the drone's movement: left_right_velocity, forward_backward_velocity, up_down_velocity, yaw_velocity
+
+#### Action Prediction:
+
+- The LSTM model predicts a discrete action and continuous velocity adjustments based on the EEG features.
+
+#### Action Execution:
+
+- The RL agent maps the predicted action to specific drone commands.
+- The commands are sent to the Tello drone using the send_rc_control method.
+
+#### Real-Time Feedback:
+
+The RL agent continuously updates the drone's state based on new EEG data and adjusts the commands accordingly.
+
+
+#### How the LSTM Model Helps:
 
 The LSTM captures temporal dependencies in the EEG data, enabling it to predict meaningful actions based on patterns in the brain signals.
 The output is normalized and passed to the RL agent for further processing.
 2. RL Agent (DroneControlEnv) and Drone Flying
 The RL agent (implemented in DroneControlEnv or ImprovedDroneControlEnv) uses the LSTM model's predictions to control the Tello drone. Here's how it works:
 
-Input to the RL Agent:
+#### Input to the RL Agent:
 
 The RL agent receives the LSTM model's output (action vector of shape (5,)).
-Mapping Actions to Drone Commands:
+
+
+#### Mapping Actions to Drone Commands:
 
 Discrete Action (action[0]):
 The discrete action is scaled to an integer between 0 and 8 and mapped to high-level commands:
@@ -907,34 +936,18 @@ The discrete action is scaled to an integer between 0 and 8 and mapped to high-l
 7: Rotate Left
 8: Rotate Right
 Continuous Values (action[1:]):
+
 The continuous values are scaled to the Tello drone's velocity range (-100 to 100) and used for fine-grained control of the drone's movement.
-Executing Commands:
+
+
+
+#### Executing Commands:
+
 
 The RL agent calls the Tello drone's send_rc_control method with the scaled velocities:
 If the drone is not connected, the RL agent simulates the action and logs the command.
 3. How Flying Works
 The flying process involves the following steps:
-
-EEG Data Processing:
-
-The EEG data is streamed and processed into feature sequences.
-The processed features are passed to the LSTM model for action prediction.
-Action Prediction:
-
-The LSTM model predicts a discrete action and continuous velocity adjustments based on the EEG features.
-Action Execution:
-
-The RL agent maps the predicted action to specific drone commands.
-The commands are sent to the Tello drone using the send_rc_control method.
-Real-Time Feedback:
-
-The RL agent continuously updates the drone's state based on new EEG data and adjusts the commands accordingly.
-Example Workflow
-EEG Feature Sequence:
-
-A 10-second EEG feature sequence is passed to the LSTM model.
-Example input shape: (10, 10878).
-LSTM Model Output:
 
 Example output: [0.7, 0.2, -0.5, 0.1, -0.3].
 0.7: Discrete action (scaled to 5, corresponding to "Ascend").
@@ -947,9 +960,12 @@ left_right_velocity = 20
 forward_backward_velocity = -50
 up_down_velocity = 10
 yaw_velocity = -30
-Drone Command Execution:
 
-The RL agent sends the following command to the Tello drone:
+
+
+
+
+
 
 
 
@@ -964,25 +980,12 @@ The RL agent sends the following command to the Tello drone:
 
 ---
 
+## 🚨 EEG Signal Processing Fundamentals
 
-
-
-
-
-
-
-
-
-
-
-
-
-## 🚨 Why This Pipeline Matters
 ---
 
 
 
-## EEG Signal Processing Fundamentals
 
 Neural activity in the human brain begins between the 17th and 23rd weeks of prenatal development. From this early stage onward, it is believed that the brain continuously generates electrical signals that reflect not only brain function but also the overall physiological state of the body. This insight drives the use of advanced digital signal processing techniques to analyze electroencephalogram (EEG) signals recorded from the human brain.
 
