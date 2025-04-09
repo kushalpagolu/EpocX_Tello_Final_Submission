@@ -743,6 +743,10 @@ Raw EEG → Bandpass Filter → Notch Filter → ICA → CAR → ANC → DWT
 
 <img width="372" alt="Screenshot 2025-04-04 at 9 28 11 PM" src="https://github.com/user-attachments/assets/9546996a-c715-4c3a-a4e2-6f18c5f4b1c6" />
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/9546996a-c715-4c3a-a4e2-6f18c5f4b1c6" width="372"/>
+</p>
+
 
 
 The cleaning process is implemented in the stream_data.py file, specifically in the `preprocess_eeg_data` method. It uses several functions from feature_extraction.py to clean the raw EEG data.
@@ -786,7 +790,9 @@ The feature extraction process is implemented in the `extract_features` method i
 
 ![feature_extraction](https://github.com/user-attachments/assets/3c8f215b-ce02-4e51-9279-d04050de2884)
 
-
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/9546996a-c715-4c3a-a4e2-6f18c5f4b1c6" width="372"/>
+</p>
 
 #### **Steps in Feature Extraction**
 
@@ -999,7 +1005,10 @@ Figure: Structure of a neuron (adopted from Attwood and MacKay)
 The electrical currents in the brain are primarily the result of ion exchange—specifically, the movement of positive sodium (Na⁺), potassium (K⁺), calcium (Ca²⁺), and negative chloride (Cl⁻) ions—across neuronal membranes, driven by the membrane potential.
 
 
-<img width="571" alt="Screenshot 2025-04-08 at 8 27 07 PM" src="https://github.com/user-attachments/assets/31b0ee67-859e-4acf-875f-ce6b65d2b41b" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/31b0ee67-859e-4acf-875f-ce6b65d2b41b" width="571"/>
+</p>
+
 
 
 Figure: The three main layers of the brain including their approximate resistivities and thicknesses.
