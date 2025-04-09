@@ -998,8 +998,11 @@ Neural activity in the human brain begins between the 17th and 23rd weeks of pre
 
 EEG signals capture the electrical currents generated during synaptic activity in the dendrites of numerous pyramidal neurons in the cerebral cortex. When neurons are activated, synaptic currents flow within their dendrites, producing both magnetic fields—detectable by electromyogram (EMG) devices—and secondary electrical fields that can be measured on the scalp using EEG systems. These electrical potentials arise from the collective postsynaptic graded potentials of pyramidal cells, forming dipoles between the neuron's soma (cell body) and its apical dendrites. 
 
+<p align="center">
 
 <img width="931" alt="Screenshot 2025-04-08 at 8 26 34 PM" src="https://github.com/user-attachments/assets/bea1ae12-acad-461e-94f9-6659ceb3c024" />
+
+</p>
 
 Figure: Structure of a neuron (adopted from Attwood and MacKay)
 
