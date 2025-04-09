@@ -741,7 +741,6 @@ Raw EEG → Bandpass Filter → Notch Filter → ICA → CAR → ANC → DWT
 ## 🔍 Detailed Processing Stages
 
 
-<img width="372" alt="Screenshot 2025-04-04 at 9 28 11 PM" src="https://github.com/user-attachments/assets/9546996a-c715-4c3a-a4e2-6f18c5f4b1c6" />
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/9546996a-c715-4c3a-a4e2-6f18c5f4b1c6" width="372"/>
@@ -788,10 +787,9 @@ The feature extraction process is implemented in the `extract_features` method i
 
 ## 🔍 Detailed Feature extraction stages 
 
-![feature_extraction](https://github.com/user-attachments/assets/3c8f215b-ce02-4e51-9279-d04050de2884)
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/9546996a-c715-4c3a-a4e2-6f18c5f4b1c6" width="372"/>
+  <img src="[https://github.com/user-attachments/assets/9546996a-c715-4c3a-a4e2-6f18c5f4b1c6](https://github.com/user-attachments/assets/3c8f215b-ce02-4e51-9279-d04050de2884)" />
 </p>
 
 #### **Steps in Feature Extraction**
