@@ -789,7 +789,7 @@ The feature extraction process is implemented in the `extract_features` method i
 
 
 <p align="center">
-  <img src="[https://github.com/user-attachments/assets/9546996a-c715-4c3a-a4e2-6f18c5f4b1c6](https://github.com/user-attachments/assets/3c8f215b-ce02-4e51-9279-d04050de2884)" />
+  <img src="[(https://github.com/user-attachments/assets/3c8f215b-ce02-4e51-9279-d04050de2884]" />
 </p>
 
 #### **Steps in Feature Extraction**
