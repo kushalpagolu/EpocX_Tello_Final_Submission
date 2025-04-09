@@ -87,42 +87,9 @@ This predictable key generation and ECB mode usage create cryptographic vulnerab
     * Python 3.7+
     * Install the required Python packages using pip:
 
-```bash
-pip install pandas matplotlib hid djitellopy pycryptodome scikit-learn stable-baselines3 gym numpy, scipy, pywt, pynput                       
-```
+3. **Create a virtual environment:**
+    * It is better to install a virtual environment and install all the packages needed for this code to run.
 
-For macos some packages might work with homebrew
-
-```bash
-brew install pandas matplotlib hid djitellopy pycryptodome scikit-learn stable-baselines3 gym numpy, scipy, pywt, pynput                       
-```
-
-It is better to install a virtual environment and install all the packages needed for this code to run.
-
-### Installation and Setup
-
-1. **Clone the Repository:**
-
-To get started, clone the repository:
-
-```bash
-
-git clone https://github.com/kushalpagolu/Emotiv_Epoc_X_Tello_Control
-```
-
-2. **Connect Hardware:**
-    * Connect the Emotiv EPOC X headset to your computer.
-    * Ensure the Tello drone is powered on and connected to the same Wi-Fi network as your computer.
-
-### Running the Project
-
-1. **Navigate to the Project Directory:**
-
-```bash
-cd Emotiv_Epoc_X_Tello_Control
-```
-
-# Create a virtual environment
 ```
 python -m venv env
 ```
@@ -150,13 +117,46 @@ This will install the necessary packages such as:
 
 hid: For interacting with the Emotiv device.
 
-#Macos
+
+```bash
+pip install pandas matplotlib hid djitellopy pycryptodome scikit-learn stable-baselines3 gym numpy, scipy, pywt, pynput                       
 ```
-brew install hidapi
+
+For macos some packages might work with homebrew
+
+```bash
+brew install pandas matplotlib hid djitellopy pycryptodome scikit-learn stable-baselines3 gym numpy, scipy, pywt, pynput                       
 ```
+
+
+### Installation and Setup
+
+1. **Clone the Repository:**
+
+To get started, clone the repository:
+
+```bash
+
+git clone https://github.com/kushalpagolu/Emotiv_Epoc_X_Tello_Control
+```
+
+2. **Connect Hardware:**
+    * Connect the Emotiv EPOC X headset to your computer.
+    * Ensure the Tello drone is powered on and connected to the same Wi-Fi network as your computer.
+    * You can also test the code without a drone to view the visualizers.
+
+### Running the Project
+
+1. **Navigate to the Project Directory:**
+
+```bash
+cd Emotiv_Epoc_X_Tello_Control
+```
+
 
 
 ## Without connecting a drone run the project to see the predictions.
+
 2. **Run `main.py`:**
 
 ```bash
@@ -169,7 +169,7 @@ This will also launch a realtime visualizer showing 14 channels raw eeg data and
 
 
 
-3. **Run `main.py` with tello drone connected:**
+3. **Run `main.py` with tello drone connected by passing the aguments:**
 
 ```bash
 python main.py --connect-drone
@@ -321,7 +321,6 @@ def preprocessing_thread():
    - **Description**:
      - Reads raw EEG data packets from the Emotiv device and parses them into a dictionary format.
 
-    
 
 3. **Preprocessing and Feature Extraction**:
    - **Method**: `process_and_extract_features` in stream_data.py. You can get more details in preprocessing thread.
@@ -335,10 +334,11 @@ def preprocessing_thread():
      - Retrieves the 10-second feature sequence from the feature window for prediction.
      - To implement this, a rolling buffer management is used which is explained in detail in preprocessing thread.
 
+
 # Preprocessing Thread 
 
 ## 1. Buffer Management and Updates
-To train the LSTM with enough data, I implemented rolling buffers to constantly keep an instance of latest 10seconds of 14 * 256 frames of eeg raw data with preprocessing and extracted features for the 10 seconds of raw data. To understand how the cleaning and extraction happens, we need to be familiar with how and why.
+To train the LSTM with enough data, I implemented rolling buffers to constantly keep an instance of latest 10seconds of 14 * 256 frames of eeg raw data with preprocessing and extracted features for the 10 seconds of raw data. To understand the cleaning and extraction process, we need to be familiar with how and why.
 
 
 
@@ -352,6 +352,7 @@ To train the LSTM with enough data, I implemented rolling buffers to constantly 
 **Buffer Management**:
      - Updates the primary and secondary buffers with the new data.
      - When the secondary buffer is full, the data is passed to the preprocessing pipeline.
+
 ### Updating Buffers
 - **File**: `stream_data.py`
 - **Method**: `update_eeg_buffers`
@@ -481,7 +482,7 @@ Feature Window: 10s sequences → LSTM input
 
 ### **How Threading Works in the Current Code**
 
-The threading is designed to decouple **data streaming**, **data preprocessing**, and **visualization** into separate threads. This allows the application to handle real-time EEG data efficiently by performing multiple tasks concurrently. Here's a breakdown of how threading works in your code:
+The threading is designed to decouple **data streaming**, **data preprocessing**, and **visualization** into separate threads. This allows the application to handle real-time EEG data efficiently by performing multiple tasks concurrently. Here's a breakdown of how threading works :
 
 ---
 
@@ -584,55 +585,9 @@ The `streaming_thread` and `preprocessing_thread` work together using a **produc
 - **Graceful Shutdown**:
   - The `stop_main_loop` event allows all threads to exit gracefully when `Ctrl+C` is detected.
 
----
-
-### **6. Suggested Improvements**
-To make the threading more robust and ensure a graceful shutdown, consider the following:
-
-#### **1. Handle `queue.Empty` Gracefully**
-- Use a timeout in `queue.get()` to periodically check the `stop_main_loop` event.
-- Example:
-  ```python
-  try:
-      packet = data_queue.get(timeout=1)  # Wait for 1 second
-  except queue.Empty:
-      if stop_main_loop.is_set():
-          break  # Exit the loop if stop signal is set
-  ```
-
-#### **2. Add Exception Handling**
-- Wrap the main loop of each thread in a `try-except` block to catch unexpected errors.
-- Example:
-  ```python
-  try:
-      while not stop_main_loop.is_set():
-          # Thread logic here
-  except Exception as e:
-      logging.error(f"Error in thread: {e}")
-  ```
-
-#### **3. Join Threads in the `finally` Block**
-- Ensure that all threads are joined in the `finally` block of the main program.
-- Example:
-  ```python
-  finally:
-      stop_main_loop.set()  # Signal all threads to stop
-      stream_thread.join()
-      preprocess_thread.join()
-      save_thread.join()
-  ```
-
-#### **4. Optimize Visualization Updates**
-- Use separate update functions for each visualizer to avoid blocking the main thread.
-- Example:
-  ```python
-  def update_visualizations():
-      while not visualization_queue.empty():
-          packet = visualization_queue.get()
-          visualizer.add_data(packet)
-  ```
 
 ---
+
 
 ### **Summary**
 - The `streaming_thread` streams raw EEG data and places it into shared queues.
@@ -667,10 +622,6 @@ This design ensures that streaming, preprocessing, and visualization can run con
 
 
 ```
-
-
-
-
 
 
 
@@ -887,18 +838,48 @@ The feature extraction and cleaning process in the provided code involves severa
 
 
 
----
+
+
+
+
+
 
 
 ## 🚨 Why This Pipeline Matters
+---
 
 
 
+## EEG Signal Processing Fundamentals
 
-## Neural Signal Processing Fundamentals
+Neural activity in the human brain begins between the 17th and 23rd weeks of prenatal development. From this early stage onward, it is believed that the brain continuously generates electrical signals that reflect not only brain function but also the overall physiological state of the body. This insight drives the use of advanced digital signal processing techniques to analyze electroencephalogram (EEG) signals recorded from the human brain.
 
+EEG signals capture the electrical currents generated during synaptic activity in the dendrites of numerous pyramidal neurons in the cerebral cortex. When neurons are activated, synaptic currents flow within their dendrites, producing both magnetic fields—detectable by electromyogram (EMG) devices—and secondary electrical fields that can be measured on the scalp using EEG systems. These electrical potentials arise from the collective postsynaptic graded potentials of pyramidal cells, forming dipoles between the neuron's soma (cell body) and its apical dendrites. 
+
+
+<img width="931" alt="Screenshot 2025-04-08 at 8 26 34 PM" src="https://github.com/user-attachments/assets/bea1ae12-acad-461e-94f9-6659ceb3c024" />
+
+Figure: Structure of a neuron (adopted from Attwood and MacKay)
+
+The electrical currents in the brain are primarily the result of ion exchange—specifically, the movement of positive sodium (Na⁺), potassium (K⁺), calcium (Ca²⁺), and negative chloride (Cl⁻) ions—across neuronal membranes, driven by the membrane potential.
+
+
+<img width="571" alt="Screenshot 2025-04-08 at 8 27 07 PM" src="https://github.com/user-attachments/assets/31b0ee67-859e-4acf-875f-ce6b65d2b41b" />
+
+
+Figure: The three main layers of the brain including their approximate resistivities and thicknesses.
 
 ### 1. Critical Preprocessing Stages
+
+Raw EEG signals typically have amplitudes in the microvolt (μV) range and contain frequency components extending up to 300 Hz. To preserve the meaningful information within these signals, they must be amplified before being passed to the analog-to-digital converter (ADC). Additionally, filtering—either before or after the ADC stage—is necessary to minimize noise and ensure the signals are suitable for further processing and visualization.
+
+EEG signals are the signatures of neural activities.
+
+I've tried to clean and process these raw signals using below methods.
+
+These operations include, but are not limited to, time-domain analysis, frequency-domain analysis, spatial-domain analysis, and multiway signal processing. In addition, various plots have been added to visualize computed features from Raw EEG data.
+
+
 
 #### 1.1 Spectral Filtering
 
@@ -1204,3 +1185,13 @@ cache_frame_data=False  # Prevent memory bloat
 
 
 This architecture enables real-time processing of EEG signals with 42+ features per channel while maintaining sub-100ms latency from brain signal to drone action. The queue-based threading model ensures stable operation even with variable sensor input rates.
+
+
+---
+
+
+## References:
+
+
+1. Neuron Figure: Lawson, C. L., and Hanson, R. J., Solving Least Squares Problems, Prentice-Hall, Englewood Cliffs,
+New Jersey, 1974.
