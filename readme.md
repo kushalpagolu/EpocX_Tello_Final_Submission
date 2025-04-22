@@ -1055,16 +1055,14 @@ But for LSTM to learn, you must feed it a sequence of feature vectors — so it 
 You’re forming your feature vector like this:
 
 
-Category	Why it's included
-Band power (e.g., alpha)	Reflects brain rhythm shifts (relaxation, focus)
-Hjorth parameters	Shape of the signal — mobility/complexity of brain activity
-Entropy	Brain randomness — low during focus, high during stress
-Fractal dimension	Complexity of thought — how "ordered" or "chaotic" the signal is
-Filtered waveform	The actual signal pattern
-1st derivative	How quickly brain state is changing
-2nd derivative	How sharply it's accelerating/decelerating
-🧠 So the LSTM receives:
-Every 1-second snapshot of the brain
+Category | Why it's included
+Band power (e.g., alpha) | Reflects brain rhythm shifts (relaxation, focus)
+Hjorth parameters | Shape of the signal — mobility/complexity of brain activity
+Entropy | Brain randomness — low during focus, high during stress
+Fractal dimension | Complexity of thought — how "ordered" or "chaotic" the signal is
+Filtered waveform | The actual signal pattern
+1st derivative | How quickly brain state is changing
+2nd derivative | How sharply it's accelerating/decelerating
 
 Across multiple features (band power + shape + noise + signal)
 
