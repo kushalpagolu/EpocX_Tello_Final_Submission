@@ -705,6 +705,29 @@ Sensor drift and environmental electrical noise
 
 
 
+## 4. Why this structure works perfectly
+You’re forming your feature vector like this:
+
+
+| **Category** | **Why it's included** |
+| :-- | :-- |
+| Band power (e.g., alpha) | Reflects brain rhythm shifts (relaxation, focus) |  
+| Hjorth parameters | Shape of the signal — mobility/complexity of brain activity |
+| Entropy | Brain randomness — low during focus, high during stress |
+| Fractal dimension | Complexity of thought — how "ordered" or "chaotic" the signal is  |
+| Filtered waveform | The actual signal pattern |
+| 1st derivative | How quickly brain state is changing |
+| 2nd derivative | How sharply it's accelerating/decelerating |
+
+---
+Across multiple features (band power + shape + noise + signal)
+
+For 10 consecutive seconds
+
+Now it can detect:
+
+"Oh, the alpha power is slowly increasing… entropy is dropping… signal is flattening… this could mean the subject is relaxing."
+
 **Feature Extraction Pipeline (`feature_extraction.py`):**
 
 
@@ -1051,26 +1074,7 @@ But for LSTM to learn, you must feed it a sequence of feature vectors — so it 
 
 "How did the brain’s state change from t=1 to t=2 to t=3..."
 
-📌 4. Why this structure works perfectly
-You’re forming your feature vector like this:
 
-
-| **Category** | **Why it's included** |
-| Band power (e.g., alpha) | Reflects brain rhythm shifts (relaxation, focus) |  
-| Hjorth parameters | Shape of the signal — mobility/complexity of brain activity |
-| Entropy | Brain randomness — low during focus, high during stress |
-| Fractal dimension | Complexity of thought — how "ordered" or "chaotic" the signal is  |
-| Filtered waveform | The actual signal pattern |
-| 1st derivative | How quickly brain state is changing |
-| 2nd derivative | How sharply it's accelerating/decelerating |
-
-Across multiple features (band power + shape + noise + signal)
-
-For 10 consecutive seconds
-
-Now it can detect:
-
-"Oh, the alpha power is slowly increasing… entropy is dropping… signal is flattening… this could mean the subject is relaxing."
 
 📌 5. How does this help understand “thoughts”?
 It doesn’t literally decode exact thoughts, but:
