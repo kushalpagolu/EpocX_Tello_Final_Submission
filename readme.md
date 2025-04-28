@@ -23,7 +23,7 @@ This project aims to control a Tello drone using real-time EEG data streamed fro
 
 ### EEG Channel Details (Indices 1-27)
 
-Each EEG channel is stored as a 14-bit value across two bytes with this mapping:
+Each EEG channel is stored as a 14-bit value across two bytes with this mapping.
 
 
 **Conversion to microvolts**:
@@ -705,8 +705,8 @@ Sensor drift and environmental electrical noise
 
 
 
-## 4. Why this structure works perfectly
-You’re forming your feature vector like this:
+## 4. Why this structure works 
+The feature vector looks like this:
 
 
 | **Category** | **Why it's included** |
@@ -1031,7 +1031,7 @@ The electrical currents in the brain are primarily the result of ion exchange—
 
 
 
-📌 1. What is EEG really measuring?
+1. What is EEG really measuring?
 EEG (electroencephalography) measures electrical activity of the brain using sensors placed on the scalp. It captures:
 
 How neurons fire collectively
@@ -1040,7 +1040,7 @@ Across time and space (channels)
 
 This activity is super fast (milliseconds) and subtle (measured in microvolts).
 
-📌 2. Why do we need features instead of raw data?
+2. Why do we need features instead of raw data?
 Raw EEG is:
 
 Very noisy
@@ -1063,7 +1063,7 @@ And the actual waveform (filtered signal)
 
 These features tell us what’s happening in the brain, in a compressed form.
 
-📌 3. What does an LSTM need to learn patterns?
+3. What does an LSTM need to learn patterns?
 LSTM (Long Short-Term Memory) networks are great for:
 
 Learning time-series data
@@ -1076,7 +1076,7 @@ But for LSTM to learn, you must feed it a sequence of feature vectors — so it 
 
 
 
-📌 5. How does this help understand “thoughts”?
+4. How does this help understand “thoughts”?
 It doesn’t literally decode exact thoughts, but:
 
 It detects patterns that correlate with cognitive states:
